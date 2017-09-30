@@ -1,13 +1,9 @@
-from itertools import zip_longest
-from collections import namedtuple, defaultdict
+from itertools import zip_longest, groupby
+from collections import defaultdict
+from functools import reduce
 from scsequtil.plot import grid
-from operator import itemgetter
-
-
-UtilizationResult = namedtuple(
-    'UtilizationResult',
-    ['name', 'max_mem', 'available_mem', 'max_disk', 'available_disk', 'disk_utilized',
-     'mem_utilized', 'robust'])
+from operator import itemgetter, attrgetter
+from cromwell_tools.resource_utilization import ResourceUtilization
 
 
 class ResourceScaling:
@@ -49,14 +45,11 @@ class ResourceScaling:
             available_mem = int(result[2].split()[-1])
             max_disk = int(result[3].split()[-1])
             available_disk = int(result[4].split()[-1])
-            disk_utilized = float(result[5].split()[-1])
-            mem_utilized = float(result[6].split()[-1])
             robust = True if result[7].split()[-1] == 'True' else False
-            utilization_result = UtilizationResult(
-                task_name, max_mem, available_mem, max_disk, available_disk, disk_utilized,
-                mem_utilized, robust)
+            resource_utilization = ResourceUtilization(
+                task_name, max_mem, available_mem, max_disk, available_disk, robust)
 
-            yield utilization_result
+            yield resource_utilization
 
     def aggregate(self):
         """aggregate resource utilization by task"""
@@ -65,19 +58,23 @@ class ResourceScaling:
 
         for input_size, log in self.logs.items():
             with open(log, 'r') as f:
-                for task in self.parse(f):
-                    self._utilization[task.name].append(input_size, task)
+                tasks = sorted(list(self.parse(f)), key=attrgetter('task_name'))
+                for name, group in groupby(tasks, key=attrgetter('task_name')):
+                    merged = reduce(ResourceUtilization.merge, group)
+                    self._utilization[name].append((input_size, merged))
 
-    def plot_attribute(self, attribute):
+    def plot_attribute(self, attribute, *args, **kwargs):
         # get number of plots to make
         nplots = len(self.utilization)
         # make some scatter plots with the amounts vs input sizes
-        ag = grid.AxesGrid(nplots, figsize=(10, 10))
+        ag = grid.AxesGrid(nplots, *args, **kwargs)
 
         def plot_function(x, y, dependent_var, ax):
-            ax.plot(x, y, c='royalblue', marker='o', markersize=10, markercolor='indianred')
-            ax.xlabel('input_size')
-            ax.ylabel(dependent_var)
+            ax.loglog(
+                x, y, c='royalblue', marker='o', markersize=10,
+                markerfacecolor='indianred')
+            ax.set_xlabel('input_size')
+            ax.set_ylabel(dependent_var)
 
         # build argument groups
         args = []
@@ -86,6 +83,7 @@ class ResourceScaling:
             args.append((sizes, [getattr(r, attribute) for r in results], task_name))
 
         ag.plot_all(args, plot_function)
+        return ag
 
 
 
