@@ -11,8 +11,7 @@ class TestPlot(unittest.TestCase):
 
     def test_parser(self):
         with open(test_log, 'r') as f:
-            data = f.read()
-            plot.log_parser(data)
+            plot.log_parser(f)
 
 if __name__ == "__main__":
     unittest.main()
