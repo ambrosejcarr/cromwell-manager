@@ -1,0 +1,161 @@
+{
+  "workflowName": "Sleep",
+  "submittedFiles": {
+    "workflow": "\ntask SleepAWhile {\n  Int time\n\n  command {\n    lsblk\n    df -k\n    sleep ${time}\n    echo \"something\"\n  }\n\n  runtime {\n    cpu: \"1\"\n    docker: \"ubuntu:zesty\"\n    memory: \"1 GB\"\n    disks: \"local-disk 10 HDD\"\n  }\n}\n\nworkflow Sleep {\n  Int time\n\n  call SleepAWhile {\n    input:\n      time = time\n  }\n}\n",
+    "workflowType": "WDL",
+    "options": "{\n  \"monitoring_script\": \"gs://broad-dsde-mint-dev-teststorage/10x/benchmark/scripts/monitor.sh\",\n  \"read_from_cache\": false,\n  \"write_to_cache\": false\n}",
+    "inputs": "{\"Sleep.time\":15}",
+    "labels": "{}"
+  },
+  "calls": {
+    "Sleep.SleepAWhile": [
+      {
+        "preemptible": false,
+        "executionStatus": "Done",
+        "stdout": "gs://broad-dsde-mint-dev-cromwell-execution/Sleep/8b3a5f5f-1e7f-4669-a124-c71704b93ac1/call-SleepAWhile/SleepAWhile-stdout.log",
+        "backendStatus": "Success",
+        "shardIndex": -1,
+        "jes": {
+          "endpointUrl": "https://genomics.googleapis.com/",
+          "machineType": "us-central1-b/g1-small",
+          "googleProject": "broad-dsde-mint-dev",
+          "monitoringScript": "gs://broad-dsde-mint-dev-teststorage/10x/benchmark/scripts/monitor.sh",
+          "executionBucket": "gs://broad-dsde-mint-dev-cromwell-execution",
+          "zone": "us-central1-b",
+          "instanceName": "ggp-17933016057543618545"
+        },
+        "outputs": {},
+        "runtimeAttributes": {
+          "preemptible": "0",
+          "failOnStderr": "false",
+          "bootDiskSizeGb": "10",
+          "disks": "local-disk 10 HDD",
+          "continueOnReturnCode": "0",
+          "docker": "ubuntu:zesty",
+          "cpu": "1",
+          "noAddress": "false",
+          "zones": "us-central1-b",
+          "memory": "1 GB"
+        },
+        "callCaching": {
+          "effectiveCallCachingMode": "CallCachingOff",
+          "allowResultReuse": false
+        },
+        "inputs": {
+          "time": 15
+        },
+        "backendLabels": {
+          "wdl-task-name": "sleepawhile",
+          "cromwell-workflow-id": "cromwell-8b3a5f5f-1e7f-4669-a124-c71704b93ac1"
+        },
+        "returnCode": 0,
+        "labels": {
+          "cromwell-workflow-id": "cromwell-8b3a5f5f-1e7f-4669-a124-c71704b93ac1",
+          "wdl-task-name": "SleepAWhile"
+        },
+        "jobId": "operations/EOzi6snsKxjx342q9eK37_gBIITYpI6DEioPcHJvZHVjdGlvblF1ZXVl",
+        "monitoringLog": "gs://broad-dsde-mint-dev-cromwell-execution/Sleep/8b3a5f5f-1e7f-4669-a124-c71704b93ac1/call-SleepAWhile/monitoring.log",
+        "backend": "JES",
+        "end": "2017-09-28T12:05:10.530-04:00",
+        "dockerImageUsed": "ubuntu@sha256:da2fd4e2e10e0ab991f251353a2d3e32d38c75a83a917dbca0a307efd8730f49",
+        "stderr": "gs://broad-dsde-mint-dev-cromwell-execution/Sleep/8b3a5f5f-1e7f-4669-a124-c71704b93ac1/call-SleepAWhile/SleepAWhile-stderr.log",
+        "callRoot": "gs://broad-dsde-mint-dev-cromwell-execution/Sleep/8b3a5f5f-1e7f-4669-a124-c71704b93ac1/call-SleepAWhile",
+        "attempt": 1,
+        "executionEvents": [
+          {
+            "startTime": "2017-09-28T12:03:31.844-04:00",
+            "description": "WaitingForOutputStore",
+            "endTime": "2017-09-28T12:03:31.844-04:00"
+          },
+          {
+            "startTime": "2017-09-28T16:05:01.847375338Z",
+            "description": "ok",
+            "endTime": "2017-09-28T16:05:02Z"
+          },
+          {
+            "startTime": "2017-09-28T12:03:31.844-04:00",
+            "description": "Pending",
+            "endTime": "2017-09-28T12:03:31.844-04:00"
+          },
+          {
+            "startTime": "2017-09-28T12:03:31.847-04:00",
+            "description": "RunningJob",
+            "endTime": "2017-09-28T16:03:40Z"
+          },
+          {
+            "startTime": "2017-09-28T12:03:31.844-04:00",
+            "description": "PreparingJob",
+            "endTime": "2017-09-28T12:03:31.847-04:00"
+          },
+          {
+            "startTime": "2017-09-28T12:03:31.844-04:00",
+            "description": "RequestingExecutionToken",
+            "endTime": "2017-09-28T12:03:31.844-04:00"
+          },
+          {
+            "startTime": "2017-09-28T16:04:58.859975202Z",
+            "description": "delocalizing-files",
+            "endTime": "2017-09-28T16:05:01.847375338Z"
+          },
+          {
+            "startTime": "2017-09-28T16:04:40.246846005Z",
+            "description": "localizing-files",
+            "endTime": "2017-09-28T16:04:42.978860732Z"
+          },
+          {
+            "startTime": "2017-09-28T16:04:35.426511801Z",
+            "description": "pulling-image",
+            "endTime": "2017-09-28T16:04:40.246846005Z"
+          },
+          {
+            "endTime": "2017-09-28T16:04:58.859975202Z",
+            "description": "running-docker",
+            "startTime": "2017-09-28T16:04:42.978860732Z"
+          },
+          {
+            "description": "initializing VM",
+            "endTime": "2017-09-28T16:04:35.426464276Z",
+            "startTime": "2017-09-28T16:03:43Z"
+          },
+          {
+            "startTime": "2017-09-28T16:03:40Z",
+            "endTime": "2017-09-28T16:03:43Z",
+            "description": "waiting for quota"
+          },
+          {
+            "description": "UpdatingJobStore",
+            "startTime": "2017-09-28T12:05:09.950-04:00",
+            "endTime": "2017-09-28T12:05:10.530-04:00"
+          },
+          {
+            "startTime": "2017-09-28T16:05:02Z",
+            "description": "cromwell poll interval",
+            "endTime": "2017-09-28T12:05:09.950-04:00"
+          },
+          {
+            "startTime": "2017-09-28T16:04:35.426464276Z",
+            "description": "start",
+            "endTime": "2017-09-28T16:04:35.426511801Z"
+          }
+        ],
+        "backendLogs": {
+          "log": "gs://broad-dsde-mint-dev-cromwell-execution/Sleep/8b3a5f5f-1e7f-4669-a124-c71704b93ac1/call-SleepAWhile/SleepAWhile.log"
+        },
+        "start": "2017-09-28T12:03:31.844-04:00"
+      }
+    ]
+  },
+  "outputs": {},
+  "workflowRoot": "gs://broad-dsde-mint-dev-cromwell-execution/Sleep/8b3a5f5f-1e7f-4669-a124-c71704b93ac1/",
+  "id": "8b3a5f5f-1e7f-4669-a124-c71704b93ac1",
+  "inputs": {
+    "Sleep.time": 15
+  },
+  "labels": {
+    "cromwell-workflow-id": "cromwell-8b3a5f5f-1e7f-4669-a124-c71704b93ac1"
+  },
+  "submission": "2017-09-28T12:03:12.481-04:00",
+  "status": "Succeeded",
+  "end": "2017-09-28T12:05:10.779-04:00",
+  "start": "2017-09-28T12:03:29.804-04:00"
+}

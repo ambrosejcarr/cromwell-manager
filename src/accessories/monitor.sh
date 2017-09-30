@@ -1,8 +1,8 @@
 #!/bin/bash
 echo --- General Information ---
 echo \#CPU: $(nproc)
-echo Total Memory: $(free -m | grep Mem | awk '{ print $2 }')  # prints in mb
-echo Total Disk space: $(df -k | grep cromwell_root | awk '{ print $2}')  # prints in kb
+echo Total Memory \(MB\): $(free -m | grep Mem | awk '{ print $2 }')  # prints in mb
+echo Total Disk Space \(KB\): $(df -k | grep cromwell_root | awk '{ print $2}')  # prints in kb
 echo
 echo --- Runtime Information ---
 
