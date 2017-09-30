@@ -1,0 +1,304 @@
+sort_by_bc_main Monitoring Summary:
+Max Memory Usage (MB): 289
+Available Memory (MB): 30163
+Max disk usage   (KB): 53488
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.001
+Memory Utilized   (%): 0.010
+Robust Estimate?     : True
+chunk_reads_main Monitoring Summary:
+Max Memory Usage (MB): 291
+Available Memory (MB): 30163
+Max disk usage   (KB): 59324
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.001
+Memory Utilized   (%): 0.010
+Robust Estimate?     : True
+extract_reads_main Monitoring Summary:
+Max Memory Usage (MB): 553
+Available Memory (MB): 30163
+Max disk usage   (KB): 62656
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.001
+Memory Utilized   (%): 0.018
+Robust Estimate?     : True
+align_reads_split Monitoring Summary:
+Max Memory Usage (MB): 307
+Available Memory (MB): 30163
+Max disk usage   (KB): 877604
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.017
+Memory Utilized   (%): 0.010
+Robust Estimate?     : True
+mark_duplicates_main Monitoring Summary:
+Max Memory Usage (MB): 299
+Available Memory (MB): 30163
+Max disk usage   (KB): 882056
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.017
+Memory Utilized   (%): 0.010
+Robust Estimate?     : True
+chunk_reads_join Monitoring Summary:
+Max Memory Usage (MB): 292
+Available Memory (MB): 30163
+Max disk usage   (KB): 53144
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.001
+Memory Utilized   (%): 0.010
+Robust Estimate?     : True
+filter_barcodes Monitoring Summary:
+Max Memory Usage (MB): 279
+Available Memory (MB): 30163
+Max disk usage   (KB): 214456
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.004
+Memory Utilized   (%): 0.009
+Robust Estimate?     : True
+extract_reads_split Monitoring Summary:
+Max Memory Usage (MB): 300
+Available Memory (MB): 30163
+Max disk usage   (KB): 53140
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.001
+Memory Utilized   (%): 0.010
+Robust Estimate?     : True
+mark_duplicates_split Monitoring Summary:
+Max Memory Usage (MB): 278
+Available Memory (MB): 30163
+Max disk usage   (KB): 55336
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.001
+Memory Utilized   (%): 0.009
+Robust Estimate?     : True
+align_reads_main Monitoring Summary:
+Max Memory Usage (MB): 1731
+Available Memory (MB): 30163
+Max disk usage   (KB): 882328
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.017
+Memory Utilized   (%): 0.057
+Robust Estimate?     : True
+count_genes_join Monitoring Summary:
+Max Memory Usage (MB): 558
+Available Memory (MB): 30163
+Max disk usage   (KB): 252536
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.005
+Memory Utilized   (%): 0.018
+Robust Estimate?     : True
+setup_chunks Monitoring Summary:
+Max Memory Usage (MB): 151
+Available Memory (MB): 3704
+Max disk usage   (KB): 54904
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.001
+Memory Utilized   (%): 0.041
+Robust Estimate?     : True
+sort_by_bc_main Monitoring Summary:
+Max Memory Usage (MB): 303
+Available Memory (MB): 30163
+Max disk usage   (KB): 53364
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.001
+Memory Utilized   (%): 0.010
+Robust Estimate?     : True
+sort_by_bc_main Monitoring Summary:
+Max Memory Usage (MB): 304
+Available Memory (MB): 30163
+Max disk usage   (KB): 53428
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.001
+Memory Utilized   (%): 0.010
+Robust Estimate?     : True
+sort_by_bc_main Monitoring Summary:
+Max Memory Usage (MB): 284
+Available Memory (MB): 30163
+Max disk usage   (KB): 53448
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.001
+Memory Utilized   (%): 0.009
+Robust Estimate?     : True
+sort_by_bc_join Monitoring Summary:
+Max Memory Usage (MB): 289
+Available Memory (MB): 30163
+Max disk usage   (KB): 55428
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.001
+Memory Utilized   (%): 0.010
+Robust Estimate?     : True
+extract_reads_join Monitoring Summary:
+Max Memory Usage (MB): 525
+Available Memory (MB): 30163
+Max disk usage   (KB): 67552
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.001
+Memory Utilized   (%): 0.017
+Robust Estimate?     : True
+bucket_by_bc_split Monitoring Summary:
+Max Memory Usage (MB): 293
+Available Memory (MB): 30163
+Max disk usage   (KB): 55380
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.001
+Memory Utilized   (%): 0.010
+Robust Estimate?     : True
+sort_by_bc_main Monitoring Summary:
+Max Memory Usage (MB): 292
+Available Memory (MB): 30163
+Max disk usage   (KB): 53336
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.001
+Memory Utilized   (%): 0.010
+Robust Estimate?     : True
+sort_by_bc_main Monitoring Summary:
+Max Memory Usage (MB): 279
+Available Memory (MB): 30163
+Max disk usage   (KB): 53364
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.001
+Memory Utilized   (%): 0.009
+Robust Estimate?     : True
+sort_by_bc_main Monitoring Summary:
+Max Memory Usage (MB): 272
+Available Memory (MB): 30163
+Max disk usage   (KB): 53472
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.001
+Memory Utilized   (%): 0.009
+Robust Estimate?     : True
+sort_by_bc_main Monitoring Summary:
+Max Memory Usage (MB): 279
+Available Memory (MB): 30163
+Max disk usage   (KB): 53448
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.001
+Memory Utilized   (%): 0.009
+Robust Estimate?     : True
+mark_duplicates_join Monitoring Summary:
+Max Memory Usage (MB): 289
+Available Memory (MB): 30163
+Max disk usage   (KB): 55404
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.001
+Memory Utilized   (%): 0.010
+Robust Estimate?     : True
+sort_by_bc_main Monitoring Summary:
+Max Memory Usage (MB): 272
+Available Memory (MB): 30163
+Max disk usage   (KB): 53368
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.001
+Memory Utilized   (%): 0.009
+Robust Estimate?     : True
+sort_by_bc_main Monitoring Summary:
+Max Memory Usage (MB): 292
+Available Memory (MB): 30163
+Max disk usage   (KB): 53528
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.001
+Memory Utilized   (%): 0.010
+Robust Estimate?     : True
+attach_bcs_and_umis_join Monitoring Summary:
+Max Memory Usage (MB): 713
+Available Memory (MB): 30163
+Max disk usage   (KB): 1102768
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.021
+Memory Utilized   (%): 0.024
+Robust Estimate?     : True
+sort_by_bc_main Monitoring Summary:
+Max Memory Usage (MB): 284
+Available Memory (MB): 30163
+Max disk usage   (KB): 53440
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.001
+Memory Utilized   (%): 0.009
+Robust Estimate?     : True
+sort_by_bc_main Monitoring Summary:
+Max Memory Usage (MB): 285
+Available Memory (MB): 30163
+Max disk usage   (KB): 53412
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.001
+Memory Utilized   (%): 0.009
+Robust Estimate?     : True
+count_genes_main Monitoring Summary:
+Max Memory Usage (MB): 283
+Available Memory (MB): 30163
+Max disk usage   (KB): 1061988
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.021
+Memory Utilized   (%): 0.009
+Robust Estimate?     : True
+sort_by_bc_main Monitoring Summary:
+Max Memory Usage (MB): 276
+Available Memory (MB): 30163
+Max disk usage   (KB): 53516
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.001
+Memory Utilized   (%): 0.009
+Robust Estimate?     : True
+sort_by_bc_main Monitoring Summary:
+Max Memory Usage (MB): 280
+Available Memory (MB): 30163
+Max disk usage   (KB): 53432
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.001
+Memory Utilized   (%): 0.009
+Robust Estimate?     : True
+chunk_reads_split Monitoring Summary:
+Max Memory Usage (MB): 273
+Available Memory (MB): 30163
+Max disk usage   (KB): 53140
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.001
+Memory Utilized   (%): 0.009
+Robust Estimate?     : True
+count_genes_split Monitoring Summary:
+Max Memory Usage (MB): 293
+Available Memory (MB): 30163
+Max disk usage   (KB): 1039712
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.020
+Memory Utilized   (%): 0.010
+Robust Estimate?     : True
+sort_by_bc_main Monitoring Summary:
+Max Memory Usage (MB): 277
+Available Memory (MB): 30163
+Max disk usage   (KB): 53448
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.001
+Memory Utilized   (%): 0.009
+Robust Estimate?     : True
+attach_bcs_and_umis_main Monitoring Summary:
+Max Memory Usage (MB): 521
+Available Memory (MB): 30163
+Max disk usage   (KB): 913672
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.018
+Memory Utilized   (%): 0.017
+Robust Estimate?     : True
+bucket_by_bc_main Monitoring Summary:
+Max Memory Usage (MB): 286
+Available Memory (MB): 30163
+Max disk usage   (KB): 55396
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.001
+Memory Utilized   (%): 0.009
+Robust Estimate?     : True
+sort_by_bc_main Monitoring Summary:
+Max Memory Usage (MB): 287
+Available Memory (MB): 30163
+Max disk usage   (KB): 53424
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.001
+Memory Utilized   (%): 0.010
+Robust Estimate?     : True
+sort_by_bc_main Monitoring Summary:
+Max Memory Usage (MB): 285
+Available Memory (MB): 30163
+Max disk usage   (KB): 53272
+Available disk   (KB): 51475068
+Disk Utilized     (%): 0.001
+Memory Utilized   (%): 0.009
+Robust Estimate?     : True
