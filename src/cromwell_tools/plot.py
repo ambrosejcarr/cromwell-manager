@@ -63,7 +63,7 @@ class ResourceScaling:
                     merged = reduce(ResourceUtilization.merge, group)
                     self._utilization[name].append((input_size, merged))
 
-    def plot_attribute(self, attribute, *args, **kwargs):
+    def plot_attribute(self, attribute, remove_constant=True, *args, **kwargs):
         # get number of plots to make
         nplots = len(self.utilization)
         # make some scatter plots with the amounts vs input sizes
@@ -80,7 +80,10 @@ class ResourceScaling:
         args = []
         for task_name, results in self.utilization.items():
             sizes, results = zip(*sorted(results, key=itemgetter(0)))
-            args.append((sizes, [getattr(r, attribute) for r in results], task_name))
+            usage = [getattr(r, attribute) for r in results]
+            if remove_constant:
+                usage = [u - min(usage) + 1 for u in usage]
+            args.append((sizes, usage, task_name))
 
         ag.plot_all(args, plot_function)
         return ag
