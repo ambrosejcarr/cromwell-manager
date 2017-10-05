@@ -4,8 +4,12 @@ from google.cloud import storage
 from .task import Task
 from .cromwell import Cromwell
 
+# todo implement "currently running task" for each workflow
+# todo implement "email on completion" for each workflow (smtplib)
+# todo implement GET /engine/:version/stats
+# todo implement GET /engine/:version/version
 
-# todo implement timing
+
 class Workflow:
     """Object to define an instance of a workflow run on Cromwell."""
 
@@ -112,7 +116,6 @@ class Workflow:
 
         return submission_json
 
-
     @property
     def status(self):
         """Status of workflow."""
@@ -182,3 +185,4 @@ class Workflow:
         with open(filename, 'w') as f:
             for task in self.tasks(retrieve=retrieve).values():
                 f.write(str(task.resource_utilization))
+
