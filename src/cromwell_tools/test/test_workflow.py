@@ -29,7 +29,8 @@ class TestWorkflow(unittest.TestCase):
 
     def test_submit(self):
         # start a new run, verify it is submitted successfully
-        workflow = cwt.Workflow.from_submission(self.wdl, self.inputs, self.options, self.server)
+        workflow = cwt.Workflow.from_submission(
+            self.wdl, self.inputs, options_json=self.options, cromwell_server=self.server)
         self.assertIn(workflow.status['status'], {'Submitted', 'Running'})
 
     def test_metadata(self):
@@ -41,7 +42,8 @@ class TestWorkflow(unittest.TestCase):
 
     @unittest.skip('long-running test (~1m)')
     def test_small_workflow_monitoring(self):
-        workflow = cwt.Workflow.from_submission(self.wdl, self.inputs, self.options, self.server)
+        workflow = cwt.Workflow.from_submission(
+            self.wdl, self.inputs, options_json=self.options, cromwell_server=self.server)
         workflow.save_resource_utilization(retrieve=True, filename='test_utilization.txt')
 
     @unittest.skip('long-running test (~60m)')
@@ -67,7 +69,8 @@ class TestWorkflow(unittest.TestCase):
 
         # run the workflow, monitor.
         workflow = cwt.Workflow.from_submission(
-            count_wdl_name, count_inputs_name, self.options, self.server)
+            count_wdl_name, count_inputs_name, options_json=self.options,
+            cromwell_server=self.server)
         workflow.save_resource_utilization(retrieve=True, filename='test_utilization.txt')
 
 if __name__ == "__main__":
