@@ -1,0 +1,2 @@
+google-cloud
+requests>=2.13.0

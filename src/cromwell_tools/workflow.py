@@ -8,7 +8,7 @@ from .cromwell import Cromwell
 # todo implement "email on completion" for each workflow (smtplib)
 # todo implement GET /engine/:version/stats
 # todo implement GET /engine/:version/version
-
+# todo implement proprty for outputs
 
 class Workflow:
     """Object to define an instance of a workflow run on Cromwell."""
