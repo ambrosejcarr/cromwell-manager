@@ -24,7 +24,7 @@ class TestTask(unittest.TestCase):
         cls.cromwell = cwt.Cromwell(ip_address)
 
     def test_workflow_monitoring_on_completed_run(self, verbose=True):
-        workflow = cwt.Workflow.(successful_run_id, self.cromwell)
+        workflow = cwt.Workflow.from_submission(successful_run_id, self.cromwell)
         workflow.save_resource_utilization('test_utilization.txt', verbose=verbose)
 
     def test_workflow_monitoring_on_completed_large_run(self, verbose=True):
