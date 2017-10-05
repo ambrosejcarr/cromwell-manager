@@ -1,30 +1,34 @@
 import re
-import requests
 import json
-from collections.abc import Iterable
+import webbrowser
 from time import sleep
+from collections.abc import Iterable
+from itertools import repeat
+import requests
+from requests.auth import HTTPBasicAuth
 
 
 class Cromwell:
-    def __init__(self, ip_address, username=None, password=None, version='v1'):
-        self._ip_address = ip_address
+    def __init__(self, cromwell_url, username=None, password=None, version='v1'):
+        self._cromwell_url = cromwell_url
         self.username = username
         self.password = password
         self.version = version
-        self.url_prefix = '{ip}/api/workflows/{version}'.format(
-            ip=self.ip_address, version=self.version)
+        self.auth = HTTPBasicAuth(username, password) if username and password else None
+        self.url_prefix = '{cromwell_url}/api/workflows/{version}'.format(
+            cromwell_url=self.cromwell_url, version=self.version)
 
     @property
-    def ip_address(self):
-        return self._ip_address
+    def cromwell_url(self):
+        return self._cromwell_url
 
-    @ip_address.setter
-    def ip_address(self, value):
+    @cromwell_url.setter
+    def cromwell_url(self, value):
         if not re.match('https?://', value):
-            raise ValueError('ip address must be an http or https address.')
+            raise ValueError('cromwell_url must be an http or https address.')
         if not self.server_is_running(value):
-            raise ValueError('ip address does not match a running cromwell server')
-        self._ip_address = value.rstrip('/')  # trailing slash is not accepted by cromwell
+            raise ValueError('cromwell_url does not match a running cromwell server')
+        self._cromwell_url = value.rstrip('/')  # trailing slash is not accepted by cromwell
 
     @staticmethod
     def print_request(request_type, request_string, response):
@@ -40,87 +44,124 @@ class Cromwell:
                           response=response.status_code))
 
     @staticmethod
-    def raise_failure(response, message):
-        raise RuntimeError(
+    def print_failure(response, message):
+        print(
+            'Request: {url}\n'
             '{message}\n'
             'Response Code: {code}\n'
             'Reason: {reason}\n'.format(
-                message=message,
-                code=response.status_code,
-                reason=response.reason
-            )
-        )
+                url=response.url, message=message, code=response.status_code, reason=response.reason
+            ))
+
+    def swagger(self):
+        """Open the swagger page for this cromwell server."""
+        webbrowser.open(self.cromwell_url)
 
     def wait_for_status(self, status, run_id, verbose=False, timeout=15, delay=3):
-        """
+        """Wait until any status in a list of potentially many statuses is achieved for a workflow.
 
-        :param iterable | str status:
-        :param run_id:
-        :param verbose:
-        :param timeout:
-        :param delay:
-        :return:
+        :param Iterable status: Iterable of one or more statuses to wait for
+        :param str run_id: identifier hash code for a workflow
+        :param bool verbose: if True, print the requests made
+        :param int timeout: maximum time to wait
+        :param int delay: time between status queries
+        :return requests.Response: response object generated when run_id achieves the first valid
+          status
         """
-        if isinstance(status, str):
-            status = {status}
-        elif isinstance(status, Iterable):
-            status = set(status)
-        else:
-            raise TypeError('status must be a str or iterable of strings')
+        # raise error if a non-existent status is passed (infinite loop)
+        status = set(status)
         if verbose:
             print('Waiting for workflow to achieve {status} status ...'
                   .format(status=status))
 
-        # todo check timeout + delay re valid combination
         response = None
-        if timeout:
-            for _ in range(0, timeout, delay):
-                response = self.status(run_id)
-                if response.json()['status'] in status:
-                    return response
-                sleep(delay)
-        else:
-            while True:
-                response = self.status(run_id)
-                if response.json()['status'] in status:
-                    return response
-                sleep(delay)
+        tries = range(0, timeout, delay) if timeout is not None else repeat(0, times=None)
+        for _ in tries:
+            response = self.status(run_id)
+            if response.json()['status'] in status:
+                return response
+            sleep(delay)
 
         # workflow didn't start
         message = ('Workflow took more than {n!s} seconds to achieve {status}'
                    ''.format(n=timeout, status=status))
-        self.raise_failure(response, message)
+        self.print_failure(response, message)
+        return response
 
-    # todo think about making these decorators so that verbose doesn't need passing in.
     def post(self, url, verbose=False, *args, **kwargs):
-        response = requests.post(url, *args, **kwargs)
+        """Make a REST POST query to url.
+
+        :param str url: POST query url
+
+        :param bool verbose: if True, print the query, response code, and content (default False)
+        :param args: additional arguments to pass to requests.post
+        :param kwargs: additional arguments to pass to requests.post
+        :return requests.Response: requests response object
+        """
+        response = requests.post(url, auth=self.auth, *args, **kwargs)
         if verbose:
             self.print_request('POST', url, response)
         return response
 
-    def get(self, url, verbose=False, *args, **kwargs):
-        response = requests.get(url, *args, **kwargs)
+    def get(self, url, verbose=False, open_browser=False, *args, **kwargs):
+        """Make a REST GET query to url.
+
+        :param str url: GET query url
+
+        :param bool verbose: if True, print the query, response code, and content (default False)
+        :param bool open_browser: if True, display the GET result in browser (default False)
+        :param args: additional positional args to pass to requests.get
+        :param kwargs: additional keyword args to pass to request.get
+        :return requests.Response: requests response object
+        """
+        response = requests.get(url, auth=self.auth, *args, **kwargs)
         if verbose:
             self.print_request('GET', url, response)
+        if open_browser:
+            webbrowser.open(url)
         return response
 
-    def server_is_running(self, verbose=False):
-        return True if self.get(self.ip_address, verbose=verbose).status_code == 200 else False
+    def server_is_running(self, *args, **kwargs):
+        """Return True if the server is running, else False.
 
-    def get_completed_workflows(self):
-        raise NotImplementedError
+        :param bool verbose: if True, print the query, response code, and content (default False)
+        :param bool open_browser: if True, display the GET result in browser (default False)
+        """
+        return True if self.get(self.cromwell_url, *args, **kwargs).status_code == 200 else False
 
-    def abort_workflow(self, workflow_id, verbose=False):
+    def abort_workflow(self, workflow_id, *args, **kwargs):
+        """Abort a workflow.
+
+        :param str workflow_id: hash for workflow to abort
+
+        :param bool verbose: if True, print the query, response code, and content (default False)
+        :param args: additional arguments to pass to requests.post
+        :param kwargs: additional arguments to pass to requests.post
+        :return response.Response: requests response object
+        """
         url = self.url_prefix + '/{id}/abort'.format(id=workflow_id)
-        return self.post(url, verbose=verbose)
+        return self.post(url, *args, **kwargs)
 
-    def submit(self, files, wait=True, verbose=False, timeout=15, delay=3):
-        submit_response = self.post(self.url_prefix, verbose=verbose, files=files)
+    def submit(self, files, wait=True, timeout=15, delay=3, verbose=False, *args, **kwargs):
+        """Submit a new workflow.
+
+        :param dict files: dictionary of files from workflow._submission_json
+
+        :param bool wait: if True, wait until workflow recognizes as submitted
+        :param int timeout: maximum time to wait
+        :param int delay: time between status queries
+        :param bool verbose: if True, print request results
+        :param args: additional positional args to pass to requests.post
+        :param kwargs: additional keyword args to pass to request.post
+        :return response.Response: requests response object
+        """
+        submit_response = self.post(self.url_prefix, files=files, *args, **kwargs)
         if submit_response.status_code > 201:
-            self.raise_failure(submit_response, 'Workflow failed to start!')
+            self.print_failure(submit_response, 'Workflow failed to start!')
+            return submit_response
         if wait:
             self.wait_for_status(
-                status={'Running', 'Submitted', 'Succeeded'},  # todo change to "wait until not status"
+                ['Running', 'Submitted', 'Succeeded'],
                 run_id=submit_response.json()['id'],
                 timeout=timeout, delay=delay, verbose=verbose)
         return submit_response
@@ -128,24 +169,113 @@ class Cromwell:
     def batch(self):
         raise NotImplementedError
 
-    def outputs(self, workflow_id, verbose=False):
-        url = self.url_prefix + '/{id}/outputs'.format(id=workflow_id)
-        return self.get(url, verbose=verbose)
+    def outputs(self, workflow_id, *args, **kwargs):
+        """Retrieve outputs for workflow_id.
 
-    def query(self):
+        :param str workflow_id: hash for workflow to abort
+
+        :param bool verbose: if True, print the query, response code, and content (default False)
+        :param bool open_browser: if True, display the GET result in browser (default False)
+        :param args: additional positional args to pass to requests.get
+        :param kwargs: additional keyword args to pass to request.get
+        :return response.Response: requests response object
+        """
+        url = self.url_prefix + '/{id}/outputs'.format(id=workflow_id)
+        return self.get(url, *args, **kwargs)
+
+    # todo add formatting to correct datetime string
+    def query(self, start=None, end=None, names=None, ids=None, status=None, labels=None, *args,
+              **kwargs):
+        """Query cromwell for workflows matching specified metadata information.
+
+        :param str start: datetime string in format #todo
+        :param str end: datetime string in format #todo
+        :param list names: list of one or more workflow name(s)
+        :param list ids: list of one or more workflow id(s)
+        :param list status: list of one or more workflow status(es). Must be a valid status:
+          {Submitted, Running, Aborting, Failed, Succeeded, Aborted}
+        :param dict labels: dictionary of custom label:value pairs
+
+        :param bool verbose: if True, print the query, response code, and content (default False)
+        :param bool open_browser: if True, display the GET result in browser (default False)
+        :return requests.Response:
+        """
+        tags = []
+        if start and isinstance(start, str):
+            tags.append('start={}'.format(start))
+        if end and isinstance(end, str):
+            tags.append('end={}'.format(end))
+        if names and isinstance(names, Iterable):
+            tags.extend(('name={}'.format(n) for n in names))
+        if ids and isinstance(ids, Iterable):
+            tags.extend(('id={}'.format(i) for i in ids))
+        if status and isinstance(status, Iterable):
+            tags.extend(('status={}'.format(s) for s in status))
+        if labels and isinstance(labels, dict):
+            tags.extend(('{k}={v}'.format(k=k, v=v) for k, v in labels.items()))
+        url = self.url_prefix + '/query?' + '&'.join(tags)
+        return self.get(url, *args, **kwargs)
+
+    # todo implement a way to filter queries by metadata information
+    def filter(self, **kwargs):
         raise NotImplementedError
 
-    def status(self, workflow_id, verbose=False):
+    def status(self, workflow_id, *args, **kwargs):
+        """Retrieve status for workflow_id.
+
+        :param str workflow_id: hash for workflow to abort
+
+        :param bool verbose: if True, print the query, response code, and content (default False)
+        :param bool open_browser: if True, display the GET result in browser (default False)
+        :param args: additional positional args to pass to requests.get
+        :param kwargs: additional keyword args to pass to request.get
+        :return response.Response: requests response object
+        """
         url = self.url_prefix + '/{id}/status'.format(id=workflow_id)
-        return self.get(url, verbose=verbose)
+        return self.get(url, *args, **kwargs)
 
-    def logs(self, workflow_id, verbose=False):
+    def logs(self, workflow_id, *args, **kwargs):
+        """Retrieve logs for workflow_id.
+
+        :param str workflow_id: hash for workflow to abort
+
+        :param bool verbose: if True, print the query, response code, and content (default False)
+        :param bool open_browser: if True, display the GET result in browser (default False)
+        :param args: additional positional args to pass to requests.get
+        :param kwargs: additional keyword args to pass to request.get
+        :return response.Response: requests response object
+        """
         url = self.url_prefix + '/{id}/logs'.format(id=workflow_id)
-        return self.get(url, verbose=verbose)
+        return self.get(url, *args, **kwargs)
 
-    def metadata(self, workflow_id, verbose=False):
+    def metadata(self, workflow_id, *args, **kwargs):
+        """Retrieve metadata for workflow_id.
+
+        :param str workflow_id: hash for workflow to abort
+
+        :param bool verbose: if True, print the query, response code, and content (default False)
+        :param bool open_browser: if True, display the GET result in browser (default False)
+        :param args: additional positional args to pass to requests.get
+        :param kwargs: additional keyword args to pass to request.get
+        :return response.Response: requests response object
+        """
         url = self.url_prefix + '/{id}/metadata'.format(id=workflow_id)
-        return self.get(url, verbose=verbose)
+        return self.get(url, *args, **kwargs)
 
-    def backends(self, verbose=False):
-        return self.get(self.url_prefix + 'backends', verbose=verbose)
+    def backends(self, *args, **kwargs):
+        """Retrieve backends for this cromwell instance.
+
+        :param bool verbose: if True, print the query, response code, and content (default False)
+        :param bool open_browser: if True, display the GET result in browser (default False)
+        :param args: additional positional args to pass to requests.get
+        :param kwargs: additional keyword args to pass to request.get
+        :return response.Response: requests response object
+        """
+        return self.get(self.url_prefix + '/backends', *args, **kwargs)
+
+    def timing(self, run_id):
+        """Open timing in browser window for run_id.
+
+        :param str run_id: run id to open timing for
+        """
+        webbrowser.open('{prefix}/{id}/timing'.format(prefix=self.url_prefix, id=run_id))

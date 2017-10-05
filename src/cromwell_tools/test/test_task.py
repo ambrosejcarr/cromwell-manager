@@ -21,16 +21,14 @@ class TestTask(unittest.TestCase):
         cls.inputs = module_dir + '/data/testing_example_inputs.json'
         cls.options = module_dir + '/data/options.json'
         cls.metadata = module_dir + '/data/example_metadata.json'
+        cls.cromwell = cwt.Cromwell(ip_address)
 
     def test_workflow_monitoring_on_completed_run(self, verbose=True):
-        cromwell = cwt.Cromwell(ip_address)
-        workflow = cwt.Workflow(self.wdl, self.inputs, self.options, cromwell)
-        workflow.run_id = successful_run_id
+        workflow = cwt.Workflow.(successful_run_id, self.cromwell)
         workflow.save_resource_utilization('test_utilization.txt', verbose=verbose)
 
     def test_workflow_monitoring_on_completed_large_run(self, verbose=True):
-        cromwell = cwt.Cromwell(ip_address)
-        workflow = cwt.Workflow(self.wdl, self.inputs, self.options, cromwell)
+        workflow = cwt.Workflow.from_submission(self.wdl, self.inputs, self.options, self.cromwell)
         workflow.run_id = successful_large_workflow_id
         workflow.save_resource_utilization('test_utilization.txt', verbose=verbose)
 

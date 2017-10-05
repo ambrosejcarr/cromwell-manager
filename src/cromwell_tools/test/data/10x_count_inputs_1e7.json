@@ -13,7 +13,7 @@
   ],
   "count.sample_def": "gs://broad-dsde-mint-dev-teststorage/10x/demo/json/sample_def.json",
   "count.sample_id": "sample_id",
-  "count.reads_per_file": 5000000,
+  "count.reads_per_file": 10000000000,
   "count.primers": [
     {
       "name": "P5",
