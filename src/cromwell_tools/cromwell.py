@@ -8,6 +8,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 
 
+# todo add os.path.isfile verification
 class Cromwell:
     def __init__(self, cromwell_url, username=None, password=None, version='v1'):
         self._cromwell_url = cromwell_url

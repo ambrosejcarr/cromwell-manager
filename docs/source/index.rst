@@ -3,12 +3,13 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Cromwell Tools's documentation!
-------------------------------------------
+Cromwell Tools' documentation:
+------------------------------
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Content:
+
 
 Indices and tables
 ------------------
@@ -17,8 +18,8 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-Contents
---------
+Modules
+-------
 
 .. automodule:: cromwell_tools.cromwell
 
