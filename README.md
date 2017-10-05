@@ -1,7 +1,7 @@
 ## Documentation:
 
 Complete documentation including installation instructions available at 
-[]readthedocs](http://cromwell-tools.readthedocs.io/en/latest/) 
+[readthedocs](http://cromwell-tools.readthedocs.io/en/latest/) 
 
 
 ## Quickstart:
