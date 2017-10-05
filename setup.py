@@ -25,6 +25,7 @@ setup(
     package_dir={'': 'src'},
     packages=['cromwell_tools', 'cromwell_tools/test'],
     install_requires=[
+        'grpcio<=1.6.0',
         'google-cloud',
         'requests>=2.13.0'
     ],

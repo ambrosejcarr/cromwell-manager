@@ -10,6 +10,7 @@ from .cromwell import Cromwell
 # todo implement GET /engine/:version/version
 # todo implement proprty for outputs
 
+
 class Workflow:
     """Object to define an instance of a workflow run on Cromwell."""
 
