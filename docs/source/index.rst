@@ -8,8 +8,9 @@ Cromwell Tools' documentation:
 
 .. toctree::
    :maxdepth: 2
-   :caption: Content:
 
+   installation
+   support
 
 Indices and tables
 ------------------
