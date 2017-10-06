@@ -9,6 +9,8 @@ from .cromwell import Cromwell
 # todo implement GET /engine/:version/stats
 # todo implement GET /engine/:version/version
 # todo implement proprty for outputs
+# todo implement property for logs
+# todo implement workflow root
 
 
 class Workflow:
@@ -127,6 +129,11 @@ class Workflow:
         """Workflow metadata."""
         return self.cromwell_server.metadata(self.run_id).json()
 
+    @property
+    def root(self):
+        """root directory for workflow outputs"""
+        return self.metadata['workflowRoot']
+
     def abort(self, *args, **kwargs):
         """Abort this workflow.
 
@@ -186,4 +193,6 @@ class Workflow:
         with open(filename, 'w') as f:
             for task in self.tasks(retrieve=retrieve).values():
                 f.write(str(task.resource_utilization))
+
+
 
