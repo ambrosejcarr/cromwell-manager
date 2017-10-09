@@ -102,16 +102,16 @@ class Cromwell:
         """Open the swagger page for this cromwell server."""
         webbrowser.open(self.cromwell_url)
 
-    def wait_for_status(self, status, run_id, verbose=False, timeout=15, delay=3):
+    def wait_for_status(self, status, workflow_id, verbose=False, timeout=15, delay=3):
         """Wait until any status in a list of potentially many statuses is achieved for a workflow.
 
         :param Iterable status: Iterable of one or more statuses to wait for
-        :param str run_id: identifier hash code for a workflow
+        :param str workflow_id: identifier hash code for a workflow
         :param bool verbose: if True, print the requests made
         :param int timeout: maximum time to wait
         :param int delay: time between status queries
-        :return requests.Response: response object generated when run_id achieves the first valid
-          status
+        :return requests.Response: response object generated when workflow_id achieves the first
+          valid status
         """
         # raise error if a non-existent status is passed (infinite loop)
         status = set(status)
@@ -122,7 +122,7 @@ class Cromwell:
         response = None
         tries = range(0, timeout, delay) if timeout is not None else repeat(0, times=None)
         for _ in tries:
-            response = self.status(run_id)
+            response = self.status(workflow_id)
             if response.json()['status'] in status:
                 return response
             sleep(delay)
@@ -207,7 +207,7 @@ class Cromwell:
         if wait:
             self.wait_for_status(
                 ['Running', 'Submitted', 'Succeeded'],
-                run_id=submit_response.json()['id'],
+                workflow_id=submit_response.json()['id'],
                 timeout=timeout, delay=delay, verbose=verbose)
         return submit_response
 
@@ -318,12 +318,12 @@ class Cromwell:
         """
         return self.get(self.url_prefix + '/backends', *args, **kwargs)
 
-    def timing(self, run_id):
-        """Open timing in browser window for run_id.
+    def timing(self, workflow_id):
+        """Open timing in browser window for workflow_id.
 
-        :param str run_id: run id to open timing for
+        :param str workflow_id: run id to open timing for
         """
-        webbrowser.open('{prefix}/{id}/timing'.format(prefix=self.url_prefix, id=run_id))
+        webbrowser.open('{prefix}/{id}/timing'.format(prefix=self.url_prefix, id=workflow_id))
 
     def version(self, *args, **kwargs):
         """Retrieve the cromwell version

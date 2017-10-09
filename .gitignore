@@ -154,3 +154,4 @@ ENV/
 # OS X
 .DS_Store
 .idea
+*secrets.json

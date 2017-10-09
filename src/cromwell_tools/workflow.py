@@ -23,6 +23,7 @@ class Workflow:
         # filled by querying server
         self._tasks = {}
 
+    # todo not sure storage client should be required
     @classmethod
     def from_submission(
             cls, wdl, inputs_json, cromwell_server, storage_client, options_json=None,
@@ -54,7 +55,8 @@ class Workflow:
             gs_client=storage_client)
 
         response = cromwell_server.submit(files=files, *args, **kwargs)
-        workflow = cls(run_id=response.json()['id'], cromwell_server=cromwell_server)
+        workflow = cls(workflow_id=response.json()['id'], cromwell_server=cromwell_server,
+                       storage_client=storage_client)
         return workflow
 
     @property
@@ -113,17 +115,19 @@ class Workflow:
 
         for key, param in check_parameters.items():
             if param is not None:
-                if param.startswith('gs://'):
-                    submission_json[key] = GSObject(param, gs_client).download_to_bytes_readable()
-                elif any(param.startswith(prefix) for prefix in ('https://', 'http://')):
-                    submission_json[key] = HTTPObject(param).download_to_bytes_readable()
-                elif isinstance(param, dict):
+                if isinstance(param, dict):
                     fileobj = tempfile.TemporaryFile(mode='w+b')
                     fileobj.write(json.dumps(param).encode())
                     fileobj.seek(0)
                     submission_json[key] = fileobj
+                elif param.startswith('gs://'):
+                    submission_json[key] = GSObject(param, gs_client).download_to_bytes_readable()
+                elif any(param.startswith(prefix) for prefix in ('https://', 'http://')):
+                    submission_json[key] = HTTPObject(param).download_to_bytes_readable()
                 else:
                     submission_json[key] = open(param, 'rb')  # todo filecheck this (?)
+
+        return submission_json
 
     @property
     def status(self):
@@ -187,7 +191,7 @@ class Workflow:
         """Wait until the workflow completes running.
 
         Optional Arguments:
-        :param str run_id: identifier hash code for a workflow
+        :param str workflow_id: identifier hash code for a workflow
         :param bool verbose: if True, print the requests made
         :param int timeout: maximum time to wait
         :param int delay: time between status queries
@@ -200,20 +204,25 @@ class Workflow:
     def save_resource_utilization(self, filename, retrieve=True):
         """Save resource utilizations for each task to file.
 
-        :param str filename: filename to save resource utilization
+        :param str | BufferedIOBase filename: filename or open file object in which to save
+          resource utilization
 
         :param bool retrieve: if True, get the current metadata from Cromwell, otherwise retrieve
           stored metadata (default True)
-        :param str run_id: identifier hash code for a workflow
+        :param str workflow_id: identifier hash code for a workflow
         :param bool verbose: if True, print the requests made
         :param int timeout: maximum time to wait
         :param int delay: time between status queries
 
         :return requests.Response: status response from Cromwell
         """
-        with open(filename, 'w') as f:
+        if isinstance(filename, str):
+            with open(filename, 'w') as f:
+                for task in self.tasks(retrieve=retrieve).values():
+                    f.write(str(task.resource_utilization))
+        elif hasattr(filename, 'write'):
             for task in self.tasks(retrieve=retrieve).values():
-                f.write(str(task.resource_utilization))
+                filename.write(str(task.resource_utilization))
 
     # todo debug this; would be nice to get a list of currently-running tasks
     # def running_tasks(self):
