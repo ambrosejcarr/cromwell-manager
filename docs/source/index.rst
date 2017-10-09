@@ -42,3 +42,11 @@ Modules
 .. autoclass:: cromwell_tools.resource_utilization.ResourceUtilization
    :members:
 
+.. automodule:: cromwell_tools.io_util
+
+.. autoclass:: cromwell_tools.io_util.GSObject
+   :members:
+
+.. autoclass:: cromwell_tools.io_util.HTTPObject
+   :members:
+
