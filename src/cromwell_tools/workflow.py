@@ -3,27 +3,21 @@ import tempfile
 from google.cloud import storage
 from .task import Task
 from .cromwell import Cromwell
-
-# todo implement "currently running task" for each workflow
-# todo implement "email on completion" for each workflow (smtplib)
-# todo implement GET /engine/:version/stats
-# todo implement GET /engine/:version/version
-# todo implement proprty for outputs
-# todo implement property for logs
-# todo implement workflow root
+from .io_util import GSObject, HTTPObject
 
 
+# todo add typechecking
 class Workflow:
     """Object to define an instance of a workflow run on Cromwell."""
 
-    def __init__(self, run_id, cromwell_server, storage_client=None):
+    def __init__(self, workflow_id, cromwell_server, storage_client=None):
         """Defines a Cromwell-runnable WDL workflow.
 
-        :param str run_id: hash code for this workflow
+        :param str workflow_id: hash code for this workflow
         :param Cromwell cromwell_server: an authenticated cromwell server object
         """
+        self.id = workflow_id
         self._cromwell_server = cromwell_server
-        self.run_id = run_id
         self._storage_client = storage_client
 
         # filled by querying server
@@ -31,17 +25,20 @@ class Workflow:
 
     @classmethod
     def from_submission(
-            cls, wdl, inputs_json, cromwell_server, options_json=None, workflow_dependencies=None,
-            custom_labels=None, *args, **kwargs):
+            cls, wdl, inputs_json, cromwell_server, storage_client, options_json=None,
+            workflow_dependencies=None, custom_labels=None, *args, **kwargs):
         """Submit a new workflow, returning a Workflow object.
+
 
         :param str wdl: wdl that defines this workflow
         :param str inputs_json: inputs to this wdl
         :param Cromwell cromwell_server: an authenticated cromwell server
+        :param storage.Client storage_client: authenticated google storage client
 
         :param str workflow_dependencies:
         :param dict custom_labels:
         :param str options_json: options file for the workflow
+
         :param bool wait: if True, wait until workflow recognizes as submitted (default: True)
         :param int timeout: maximum time to wait
         :param int delay: time between status queries
@@ -51,7 +48,11 @@ class Workflow:
 
         :return dict: Cromwell submission result
         """
-        files = cls._create_submission_json(wdl, inputs_json, options_json, workflow_dependencies, custom_labels)
+        files = cls._create_submission_json(
+            wdl=wdl, inputs_json=inputs_json, options_json=options_json,
+            workflow_dependencies=workflow_dependencies, custom_labels=custom_labels,
+            gs_client=storage_client)
+
         response = cromwell_server.submit(files=files, *args, **kwargs)
         workflow = cls(run_id=response.json()['id'], cromwell_server=cromwell_server)
         return workflow
@@ -65,6 +66,9 @@ class Workflow:
 
     @storage_client.setter
     def storage_client(self, value):
+        if not isinstance(value, storage.Client):
+            raise TypeError('storage_client must be a google.cloud.storage.Client object, not %s'
+                            % type(value))
         self._storage_client = value
 
     @property
@@ -80,59 +84,76 @@ class Workflow:
             raise RuntimeError('server is not running')
 
     @staticmethod
-    def _create_submission_json(
-            wdl, inputs_json, options_json=None, workflow_dependencies=None, custom_labels=None):
+    def _create_submission_json(wdl, inputs_json, gs_client, options_json=None,
+                                workflow_dependencies=None, custom_labels=None):
         """Create a submission json for the submit POST request.
 
         :param str wdl:
         :param str inputs_json:
+        :param storage.Client gs_client:
+
         :param str options_json:
         :param str workflow_dependencies:
         :param dict custom_labels:
         :return dict: json dictionary containing inputs: open filehandles
         """
+        submission_json = {}
 
-        # todo may want to refactor this to be more generally useful; would allow specification of
-        # input files programmatically.
+        for name, param in (('wdl', wdl), ('inputs_json', inputs_json)):
+            if param is None:
+                raise ValueError('parameter %s is required.' % name)
 
-        submission_json = {
-            'wdlSource': open(wdl, 'rb'),
-            'workflowInputs': open(inputs_json, 'rb')
+        check_parameters = {
+            'wdlSource': wdl,
+            'workflowInputs': inputs_json,
+            'workflowOptions': options_json,
+            'workflowDependencies': workflow_dependencies,
+            'customLabels': custom_labels
         }
 
-        # dump labels to a tempfile
-        if custom_labels is not None and isinstance(custom_labels, dict):
-            label_file = tempfile.TemporaryFile(mode='w+b')
-            label_file.write(json.dumps(custom_labels).encode())
-            label_file.seek(0)
-            submission_json['customLabels'] = label_file
-        elif custom_labels is not None and isinstance(custom_labels, str):
-            label_file = open(custom_labels, 'rb')
-            submission_json['customLabels'] = label_file
-        elif custom_labels is not None:  # labels is wrong type
-            raise TypeError('custom labels must be a dict of labels or a filepath')
-
-        if options_json is not None:
-            submission_json['workflowOptions'] = open(options_json, 'rb')
-        if workflow_dependencies is not None:
-            submission_json['workflowDependencies'] = open(workflow_dependencies, 'rb')
-
-        return submission_json
+        for key, param in check_parameters.items():
+            if param is not None:
+                if param.startswith('gs://'):
+                    submission_json[key] = GSObject(param, gs_client).download_to_bytes_readable()
+                elif any(param.startswith(prefix) for prefix in ('https://', 'http://')):
+                    submission_json[key] = HTTPObject(param).download_to_bytes_readable()
+                elif isinstance(param, dict):
+                    fileobj = tempfile.TemporaryFile(mode='w+b')
+                    fileobj.write(json.dumps(param).encode())
+                    fileobj.seek(0)
+                    submission_json[key] = fileobj
+                else:
+                    submission_json[key] = open(param, 'rb')  # todo filecheck this (?)
 
     @property
     def status(self):
         """Status of workflow."""
-        return self.cromwell_server.status(self.run_id).json()
+        return self.cromwell_server.status(self.id).json()
 
     @property
     def metadata(self):
         """Workflow metadata."""
-        return self.cromwell_server.metadata(self.run_id).json()
+        return self.cromwell_server.metadata(self.id).json()
 
     @property
     def root(self):
         """root directory for workflow outputs"""
         return self.metadata['workflowRoot']
+
+    @property
+    def outputs(self):
+        """workflow outputs"""
+        return self.cromwell_server.outputs(self.id).json()
+
+    @property
+    def inputs(self):
+        """workflow inputs"""
+        return self.metadata['inputs']
+
+    @property
+    def logs(self):
+        """workflow logs"""
+        return self.cromwell_server.logs(self.id).json()
 
     def abort(self, *args, **kwargs):
         """Abort this workflow.
@@ -142,7 +163,7 @@ class Workflow:
 
         :return request.Response: abort response
         """
-        return self.cromwell_server.abort_workflow(self.run_id, *args, **kwargs).json()
+        return self.cromwell_server.abort_workflow(self.id, *args, **kwargs).json()
 
     def tasks(self, retrieve=True):
         """Get the workflow task summaries.
@@ -160,7 +181,7 @@ class Workflow:
 
     def timing(self):
         """Open timing for this task in browser window."""
-        self.cromwell_server.timing(self.run_id)
+        self.cromwell_server.timing(self.id)
 
     def wait_until_complete(self, *args, **kwargs):
         """Wait until the workflow completes running.
@@ -174,7 +195,7 @@ class Workflow:
         :return requests.Response: status response from Cromwell
         """
         complete_status = ['Aborted', 'Failed', 'Succeeded']
-        self.cromwell_server.wait_for_status(complete_status, self.run_id, *args, **kwargs)
+        self.cromwell_server.wait_for_status(complete_status, self.id, *args, **kwargs)
 
     def save_resource_utilization(self, filename, retrieve=True):
         """Save resource utilizations for each task to file.
@@ -194,5 +215,15 @@ class Workflow:
             for task in self.tasks(retrieve=retrieve).values():
                 f.write(str(task.resource_utilization))
 
-
-
+    # todo debug this; would be nice to get a list of currently-running tasks
+    # def running_tasks(self):
+    #     if self.status['status'] != 'Running':
+    #         print('Workflow is not running')
+    #         return
+    #     else:
+    #         running = []
+    #         for name, call in self.metadata['calls'].items():
+    #             for shard in call:
+    #                 if shard['executionStatus'] == 'Running':
+    #                     running.append(name)
+    #         return self.metadata['calls'][-1]['name']

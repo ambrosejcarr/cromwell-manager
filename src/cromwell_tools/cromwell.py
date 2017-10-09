@@ -8,19 +8,50 @@ import requests
 from requests.auth import HTTPBasicAuth
 
 
-# todo add os.path.isfile verification
 class Cromwell:
-    def __init__(self, cromwell_url, username=None, password=None, version='v1'):
-        self._cromwell_url = cromwell_url
-        self.username = username
-        self.password = password
-        self.version = version
+    """Wrapper for the Cromwell REST API"""
+
+    def __init__(self, cromwell_url, username=None, password=None, api_version='v1'):
+        """API wrapper for a running cromwell server
+
+        :param str cromwell_url: url of a running cromwell instance
+        :param str | None username: (optional) username for the cromwell instance
+        :param str | None password: (optional) password for the cromwell instance
+        :param str api_version: version of the cromwell API
+        """
+
+        if isinstance(cromwell_url, str):
+            self._cromwell_url = cromwell_url
+        else:
+            raise TypeError('cromwell_url must be a str, not %s' % type(cromwell_url))
+
+        if isinstance(username, str) or username is None:
+            self.username = username
+        else:
+            raise TypeError('If provided, username must be a str, not %s' % type(username))
+
+        if isinstance(password, str) or username is None:
+            self.password = password
+        else:
+            raise TypeError('If provided, password must be a str, not %s' % type(password))
+
+        if isinstance(api_version, str):
+            self.api_version = api_version
+        else:
+            raise ValueError('version must be a str, not %s' % type(api_version))
+
         self.auth = HTTPBasicAuth(username, password) if username and password else None
         self.url_prefix = '{cromwell_url}/api/workflows/{version}'.format(
-            cromwell_url=self.cromwell_url, version=self.version)
+            cromwell_url=self.cromwell_url, version=self.api_version)
+
+        # check that server is running
+        if not self.server_is_running():
+            raise RuntimeError('url, username, and password did not authenticate to a running '
+                               'cromwell instance.')
 
     @property
     def cromwell_url(self):
+        """URL for the cromwell REST endpoints."""
         return self._cromwell_url
 
     @cromwell_url.setter
@@ -33,6 +64,14 @@ class Cromwell:
 
     @staticmethod
     def print_request(request_type, request_string, response):
+        """Print a request to console.
+
+        Triggered by the verbose=True flag on cromwell or workspace functions and properties.
+
+        :param str request_type: {GET, POST} type of REST operation
+        :param str request_string: full request url
+        :param requests.Response response: response from request operation
+        """
         try:
             formatted_response = json.dumps(response.json(), indent=2)
             print('{request_type} Request: {request_string}\nResponse: {response}\n'
@@ -45,7 +84,12 @@ class Cromwell:
                           response=response.status_code))
 
     @staticmethod
-    def print_failure(response, message):
+    def print_failure(response, message=''):
+        """Print information on a failing request to console.
+
+        :param requests.Response response: response from request operation
+        :param str message: (optional) message to append to failure report
+        """
         print(
             'Request: {url}\n'
             '{message}\n'
@@ -280,3 +324,29 @@ class Cromwell:
         :param str run_id: run id to open timing for
         """
         webbrowser.open('{prefix}/{id}/timing'.format(prefix=self.url_prefix, id=run_id))
+
+    def version(self, *args, **kwargs):
+        """Retrieve the cromwell version
+
+        :param bool verbose: if True, print the query, response code, and content (default False)
+        :param bool open_browser: if True, display the GET result in browser (default False)
+        :param args: additional positional args to pass to requests.get
+        :param kwargs: additional keyword args to pass to request.get
+        :return response.Response: requests response object
+        """
+        url = '{cromwell_url}/engine/{version}/version'.format(
+            cromwell_url=self.cromwell_url, version=self.api_version)
+        return self.get(url, *args, **kwargs)
+
+    def stats(self, *args, **kwargs):
+        """Retrieve cromwell statistics on number of running jobs
+
+        :param bool verbose: if True, print the query, response code, and content (default False)
+        :param bool open_browser: if True, display the GET result in browser (default False)
+        :param args: additional positional args to pass to requests.get
+        :param kwargs: additional keyword args to pass to request.get
+        :return response.Response: requests response object
+        """
+        url = '{cromwell_url}/engine/{version}/stats'.format(
+            cromwell_url=self.cromwell_url, version=self.api_version)
+        return self.get(url, *args, **kwargs)
