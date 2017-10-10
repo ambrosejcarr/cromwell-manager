@@ -6,6 +6,8 @@ from .cromwell import Cromwell
 from .io_util import GSObject, HTTPObject
 
 
+# todo add ability to zip up specified subworkflows (can this be done with a tempfile?
+# that'd be glorious)
 # todo add typechecking
 class Workflow:
     """Object to define an instance of a workflow run on Cromwell."""
@@ -23,6 +25,8 @@ class Workflow:
         # filled by querying server
         self._tasks = {}
 
+    # when workflow fails to start, make the error messages clearer! right now you get a KeyError
+    # when Cromwell attempts to access Workflow ID (error should be thrown earlier)
     # todo not sure storage client should be required
     @classmethod
     def from_submission(
