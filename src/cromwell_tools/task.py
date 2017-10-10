@@ -2,6 +2,8 @@ from cromwell_tools.resource_utilization import ResourceUtilization
 from cromwell_tools.io_util import GSObject
 
 
+# todo this should be CalledTaskBase, CalledTask, CalledScatteredTask
+# todo need automated detection in workflow to differentiate between subworkflows and calledtasks
 # todo tasks can have one or more subworkflow ids (one per shard)
 # todo tasks do not currently have options for multiple resource utilizations (several shards, due
 # to scatter) but they should!

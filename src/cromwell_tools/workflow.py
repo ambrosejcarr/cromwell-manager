@@ -6,6 +6,7 @@ from .cromwell import Cromwell
 from .io_util import GSObject, HTTPObject
 
 
+# todo break up into WorkflowBase, Workflow, SubWorkflow, ScatteredSubWorkflow
 # todo add ability to zip up specified subworkflows (can this be done with a tempfile?
 # that'd be glorious)
 # todo add typechecking
