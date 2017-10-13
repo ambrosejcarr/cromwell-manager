@@ -1,5 +1,5 @@
-from cromwell_tools.resource_utilization import ResourceUtilization
-from cromwell_tools.io_util import GSObject
+from .resource_utilization import ResourceUtilization
+from .io_util import GSObject
 
 
 # todo this should be CalledTaskBase, CalledTask, CalledScatteredTask

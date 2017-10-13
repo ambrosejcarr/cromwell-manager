@@ -1,19 +1,21 @@
-.. Cromwell Tools documentation master file, created by
-   sphinx-quickstart on Wed Oct  4 10:03:31 2017.
+.. Cromwell Manager documentation master file, created by
+   sphinx-quickstart on Fri Oct 13 18:34:20 2017.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Cromwell Tools' documentation:
-------------------------------
+Welcome to Cromwell Manager's documentation!
+============================================
 
 .. toctree::
    :maxdepth: 2
+   :caption: Contents:
 
    installation
    support
 
+
 Indices and tables
-------------------
+==================
 
 * :ref:`genindex`
 * :ref:`modindex`
