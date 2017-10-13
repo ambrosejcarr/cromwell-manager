@@ -1,0 +1,3 @@
+{
+  "monitoring_script": "gs://broad-dsde-mint-dev-teststorage/10x/benchmark/scripts/monitor_long.sh"
+}
