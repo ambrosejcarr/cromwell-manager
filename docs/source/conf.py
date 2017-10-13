@@ -47,7 +47,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'Cromwell Tools'
+project = 'Cromwell Manager'
 copyright = '2017, Ambrose J. Carr'
 author = 'Ambrose J. Carr'
 
@@ -116,7 +116,7 @@ html_sidebars = {
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'CromwellToolsdoc'
+htmlhelp_basename = 'CromwellManagerdoc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -143,7 +143,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'CromwellTools.tex', 'Cromwell Tools Documentation',
+    (master_doc, 'CromwellManager.tex', 'Cromwell Manager Documentation',
      'Ambrose J. Carr', 'manual'),
 ]
 
@@ -153,7 +153,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'cromwelltools', 'Cromwell Tools Documentation',
+    (master_doc, 'cromwellmanager', 'Cromwell Manager Documentation',
      [author], 1)
 ]
 
@@ -164,8 +164,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'CromwellTools', 'Cromwell Tools Documentation',
-     author, 'CromwellTools', 'One line description of project.',
+    (master_doc, 'CromwellManager', 'Cromwell Manager Documentation',
+     author, 'CromwellManager', 'One line description of project.',
      'Miscellaneous'),
 ]
 
