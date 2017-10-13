@@ -16,14 +16,14 @@ CLASSIFIERS = [
 ]
 
 setup(
-    name='cromwell_tools',
+    name='cromwell_manager',
     version='0.0.1',
     description='Utilities for interacting with a cromwell server',
-    url='https://github.com/ambrosejcarr/cromwell_tools.git',
+    url='https://github.com/ambrosejcarr/cromwell_manager.git',
     author='Ambrose J. Carr',
     author_email='mail@ambrosejcarr.com',
     package_dir={'': 'src'},
-    packages=['cromwell_tools', 'cromwell_tools/test'],
+    packages=['cromwell_manager', 'cromwell_manager/test'],
     install_requires=[
         'grpcio<1.6dev',
         'google-cloud',

@@ -22,31 +22,31 @@ Indices and tables
 Modules
 -------
 
-.. automodule:: cromwell_tools.cromwell
+.. automodule:: cromwell_manager.cromwell
 
-.. autoclass:: cromwell_tools.cromwell.Cromwell
+.. autoclass:: cromwell_manager.cromwell.Cromwell
    :members:
 
-.. automodule:: cromwell_tools.workflow
+.. automodule:: cromwell_manager.workflow
 
-.. autoclass:: cromwell_tools.workflow.Workflow
+.. autoclass:: cromwell_manager.workflow.Workflow
    :members:
 
-.. automodule:: cromwell_tools.task
+.. automodule:: cromwell_manager.task
 
-.. autoclass:: cromwell_tools.task.Task
+.. autoclass:: cromwell_manager.task.Task
    :members:
 
-.. automodule:: cromwell_tools.resource_utilization
+.. automodule:: cromwell_manager.resource_utilization
 
-.. autoclass:: cromwell_tools.resource_utilization.ResourceUtilization
+.. autoclass:: cromwell_manager.resource_utilization.ResourceUtilization
    :members:
 
-.. automodule:: cromwell_tools.io_util
+.. automodule:: cromwell_manager.io_util
 
-.. autoclass:: cromwell_tools.io_util.GSObject
+.. autoclass:: cromwell_manager.io_util.GSObject
    :members:
 
-.. autoclass:: cromwell_tools.io_util.HTTPObject
+.. autoclass:: cromwell_manager.io_util.HTTPObject
    :members:
 
