@@ -10,8 +10,9 @@ from .io_util import GSObject, HTTPObject
 # todo add ability to zip up specified subworkflows (can this be done with a tempfile?
 # that'd be glorious)
 # todo add typechecking
-class Workflow:
-    """Object to define an instance of a workflow run on Cromwell."""
+# todo generate links to google storage for inputs / outputs / files etc
+
+class WorkflowBase:
 
     def __init__(self, workflow_id, cromwell_server, storage_client=None):
         """Defines a Cromwell-runnable WDL workflow.
@@ -25,6 +26,85 @@ class Workflow:
 
         # filled by querying server
         self._tasks = {}
+
+    @property
+    def storage_client(self):
+        """Authenticated google storage client."""
+        if self._storage_client is None:
+            self._storage_client = storage.Client()
+        return self._storage_client
+
+    @storage_client.setter
+    def storage_client(self, value):
+        if not isinstance(value, storage.Client):
+            raise TypeError('storage_client must be a google.cloud.storage.Client object, not %s'
+                            % type(value))
+        self._storage_client = value
+
+    @property
+    def cromwell_server(self):
+        """Authenticated, currently-running Cromwell server."""
+        return self._cromwell_server
+
+    @cromwell_server.setter
+    def cromwell_server(self, server):
+        if not isinstance(server, Cromwell):
+            raise TypeError('server must be a Cromwell Server instance.')
+        if not server.server_is_running():
+            raise RuntimeError('server is not running')
+
+    # todo check that status can be called on a subworkflow
+    @property
+    def status(self):
+        """Status of workflow."""
+        return self.cromwell_server.status(self.id).json()
+
+    @property
+    def metadata(self):
+        """Workflow metadata."""
+        return self.cromwell_server.metadata(self.id).json()
+
+    @property
+    def root(self):
+        """root directory for workflow outputs"""
+        return self.metadata['workflowRoot']
+
+    @property
+    def outputs(self):
+        """workflow outputs"""
+        return self.cromwell_server.outputs(self.id).json()
+
+    @property
+    def inputs(self):
+        """workflow inputs"""
+        return self.metadata['inputs']
+
+    @property
+    def logs(self):
+        """workflow logs"""
+        return self.cromwell_server.logs(self.id).json()
+
+    def timing(self):
+        """Open timing for this task in browser window."""
+        self.cromwell_server.timing(self.id)
+
+    def tasks(self, retrieve=True):
+        """Get the workflow task summaries.
+
+        :param bool retrieve: if True, get the current status from Cromwell, otherwise retrieve
+          stored status (default True)
+
+        :return dict: Cromwell metadata for workflow
+        """
+        if retrieve:
+            self._tasks = {
+                name: Task(call_data, self.storage_client) for name, call_data in
+                self.metadata['calls'].items()}
+        return self._tasks
+
+
+class Workflow(WorkflowBase):
+    """Object to define an instance of a top-level workflow run on Cromwell."""
 
     # when workflow fails to start, make the error messages clearer! right now you get a KeyError
     # when Cromwell attempts to access Workflow ID (error should be thrown earlier)
@@ -63,32 +143,6 @@ class Workflow:
         workflow = cls(workflow_id=response.json()['id'], cromwell_server=cromwell_server,
                        storage_client=storage_client)
         return workflow
-
-    @property
-    def storage_client(self):
-        """Authenticated google storage client."""
-        if self._storage_client is None:
-            self._storage_client = storage.Client()
-        return self._storage_client
-
-    @storage_client.setter
-    def storage_client(self, value):
-        if not isinstance(value, storage.Client):
-            raise TypeError('storage_client must be a google.cloud.storage.Client object, not %s'
-                            % type(value))
-        self._storage_client = value
-
-    @property
-    def cromwell_server(self):
-        """Authenticated, currently-running Cromwell server."""
-        return self._cromwell_server
-
-    @cromwell_server.setter
-    def cromwell_server(self, server):
-        if not isinstance(server, Cromwell):
-            raise TypeError('server must be a Cromwell Server instance.')
-        if not server.server_is_running():
-            raise RuntimeError('server is not running')
 
     @staticmethod
     def _create_submission_json(wdl, inputs_json, gs_client, options_json=None,
@@ -134,35 +188,10 @@ class Workflow:
 
         return submission_json
 
-    @property
-    def status(self):
-        """Status of workflow."""
-        return self.cromwell_server.status(self.id).json()
-
-    @property
-    def metadata(self):
-        """Workflow metadata."""
-        return self.cromwell_server.metadata(self.id).json()
-
-    @property
-    def root(self):
-        """root directory for workflow outputs"""
-        return self.metadata['workflowRoot']
-
-    @property
-    def outputs(self):
-        """workflow outputs"""
-        return self.cromwell_server.outputs(self.id).json()
-
-    @property
-    def inputs(self):
-        """workflow inputs"""
-        return self.metadata['inputs']
-
-    @property
-    def logs(self):
-        """workflow logs"""
-        return self.cromwell_server.logs(self.id).json()
+    # todo implement me, integrate with _create_submission_json
+    def _package_workflow_dependencies(self):
+        """Download wdls, zip, and return a bytes-readable output"""
+        raise NotImplementedError
 
     def abort(self, *args, **kwargs):
         """Abort this workflow.
@@ -173,24 +202,6 @@ class Workflow:
         :return request.Response: abort response
         """
         return self.cromwell_server.abort_workflow(self.id, *args, **kwargs).json()
-
-    def tasks(self, retrieve=True):
-        """Get the workflow task summaries.
-
-        :param bool retrieve: if True, get the current status from Cromwell, otherwise retrieve
-          stored status (default True)
-
-        :return dict: Cromwell metadata for workflow
-        """
-        if retrieve:
-            self._tasks = {
-                name: Task(call_data, self.storage_client) for name, call_data in
-                self.metadata['calls'].items()}
-        return self._tasks
-
-    def timing(self):
-        """Open timing for this task in browser window."""
-        self.cromwell_server.timing(self.id)
 
     def wait_until_complete(self, *args, **kwargs):
         """Wait until the workflow completes running.
@@ -241,3 +252,7 @@ class Workflow:
     #                 if shard['executionStatus'] == 'Running':
     #                     running.append(name)
     #         return self.metadata['calls'][-1]['name']
+
+
+class SubWorkflow(WorkflowBase):
+    pass  # todo implement me
