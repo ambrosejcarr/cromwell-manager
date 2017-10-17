@@ -1,12 +1,11 @@
 import json
 import tempfile
 from google.cloud import storage
-from .task import Task
+from .calledtask import CalledTask
 from .cromwell import Cromwell
 from .io_util import GSObject, HTTPObject
 
 
-# todo break up into WorkflowBase, Workflow, SubWorkflow, ScatteredSubWorkflow
 # todo add ability to zip up specified subworkflows (can this be done with a tempfile?
 # that'd be glorious)
 # todo add typechecking
@@ -97,10 +96,38 @@ class WorkflowBase:
         :return dict: Cromwell metadata for workflow
         """
         if retrieve:
-            self._tasks = {
-                name: Task(call_data, self.storage_client) for name, call_data in
-                self.metadata['calls'].items()}
-        return self._tasks
+            self._tasks = {}
+            for name, shard_list in self.metadata['calls'].items():
+                if 'subworkflowId' in shard_list[0]:  # is a list of subworkflows
+                    self._tasks[name] = [SubWorkflow(m['subworkflowId'], self.cromwell_server, self.storage_client) for m in shard_list]
+                else:
+                    self._tasks[name] = CalledTask(name, shard_list, self.storage_client)
+
+    def save_resource_utilization(self, filename, retrieve=True):
+        """Save resource utilizations for each task to file.
+
+        :param str | BufferedIOBase filename: filename or open file object in which to save
+          resource utilization
+
+        :param bool retrieve: if True, get the current metadata from Cromwell, otherwise retrieve
+          stored metadata (default True)
+        :param str workflow_id: identifier hash code for a workflow
+        :param bool verbose: if True, print the requests made
+        :param int timeout: maximum time to wait
+        :param int delay: time between status queries
+
+        :return requests.Response: status response from Cromwell
+        """
+        if isinstance(filename, str):
+            filename = open(filename, 'w')
+        for task in self.tasks(retrieve=retrieve).values():
+            if isinstance(task, CalledTask):
+                filename.write(str(task.resource_utilization))
+            elif isinstance(task, SubWorkflow):
+                task.save_resource_utilization(filename, retrieve=retrieve)  # recursion
+            else:
+                raise TypeError('tasks must be CalledTasks or Subworkflows, not %s'
+                                % type(task))
 
 
 class Workflow(WorkflowBase):
@@ -189,9 +216,13 @@ class Workflow(WorkflowBase):
         return submission_json
 
     # todo implement me, integrate with _create_submission_json
-    def _package_workflow_dependencies(self):
+    def _package_workflow_dependencies(self, *dependencies):
         """Download wdls, zip, and return a bytes-readable output"""
-        raise NotImplementedError
+        for dependency in dependencies:
+            # download file into memory
+            # put them all into a zip file
+            # return that zip file
+            pass
 
     def abort(self, *args, **kwargs):
         """Abort this workflow.
@@ -217,29 +248,6 @@ class Workflow(WorkflowBase):
         complete_status = ['Aborted', 'Failed', 'Succeeded']
         self.cromwell_server.wait_for_status(complete_status, self.id, *args, **kwargs)
 
-    def save_resource_utilization(self, filename, retrieve=True):
-        """Save resource utilizations for each task to file.
-
-        :param str | BufferedIOBase filename: filename or open file object in which to save
-          resource utilization
-
-        :param bool retrieve: if True, get the current metadata from Cromwell, otherwise retrieve
-          stored metadata (default True)
-        :param str workflow_id: identifier hash code for a workflow
-        :param bool verbose: if True, print the requests made
-        :param int timeout: maximum time to wait
-        :param int delay: time between status queries
-
-        :return requests.Response: status response from Cromwell
-        """
-        if isinstance(filename, str):
-            with open(filename, 'w') as f:
-                for task in self.tasks(retrieve=retrieve).values():
-                    f.write(str(task.resource_utilization))
-        elif hasattr(filename, 'write'):
-            for task in self.tasks(retrieve=retrieve).values():
-                filename.write(str(task.resource_utilization))
-
     # todo debug this; would be nice to get a list of currently-running tasks
     # def running_tasks(self):
     #     if self.status['status'] != 'Running':
@@ -255,4 +263,5 @@ class Workflow(WorkflowBase):
 
 
 class SubWorkflow(WorkflowBase):
-    pass  # todo implement me
+    """A workflow without custom constructors"""
+    pass
