@@ -3,14 +3,10 @@ import tempfile
 from google.cloud import storage
 from .calledtask import CalledTask
 from .cromwell import Cromwell
-from .io_util import GSObject, HTTPObject
+from .io_util import GSObject, HTTPObject, package_workflow_dependencies
 
 
-# todo add ability to zip up specified subworkflows (can this be done with a tempfile?
-# that'd be glorious)
-# todo add typechecking
 # todo generate links to google storage for inputs / outputs / files etc
-
 class WorkflowBase:
 
     def __init__(self, workflow_id, cromwell_server, storage_client=None):
@@ -133,7 +129,7 @@ class WorkflowBase:
 class Workflow(WorkflowBase):
     """Object to define an instance of a top-level workflow run on Cromwell."""
 
-    # when workflow fails to start, make the error messages clearer! right now you get a KeyError
+    # todo workflow fails to start, make the error messages clearer! right now you get a KeyError
     # when Cromwell attempts to access Workflow ID (error should be thrown earlier)
     # todo not sure storage client should be required
     @classmethod
@@ -148,7 +144,7 @@ class Workflow(WorkflowBase):
         :param Cromwell cromwell_server: an authenticated cromwell server
         :param storage.Client storage_client: authenticated google storage client
 
-        :param str workflow_dependencies:
+        :param str | dict workflow_dependencies:
         :param dict custom_labels:
         :param str options_json: options file for the workflow
 
@@ -181,7 +177,7 @@ class Workflow(WorkflowBase):
         :param storage.Client gs_client:
 
         :param str options_json:
-        :param str workflow_dependencies:
+        :param str | dict workflow_dependencies:
         :param dict custom_labels:
         :return dict: json dictionary containing inputs: open filehandles
         """
@@ -195,13 +191,23 @@ class Workflow(WorkflowBase):
             'wdlSource': wdl,
             'workflowInputs': inputs_json,
             'workflowOptions': options_json,
-            'workflowDependencies': workflow_dependencies,
             'customLabels': custom_labels
         }
 
+        # workflow dependencies
+        if isinstance(workflow_dependencies, str) and workflow_dependencies.endswith('.zip'):
+            check_parameters['wdlDependencies'] = workflow_dependencies  # delay check to below
+        elif isinstance(workflow_dependencies, dict):
+            submission_json['wdlDependencies'] = package_workflow_dependencies(
+                **workflow_dependencies)
+        else:
+            raise TypeError('workflow_dependencies must be a dict containing (name, value) pairs, '
+                            'or a path to a pre-zipped dependency archive, not %s' %
+                            workflow_dependencies)
+
         for key, param in check_parameters.items():
             if param is not None:
-                if isinstance(param, dict):
+                if isinstance(param, dict):  # custom labels or options json
                     fileobj = tempfile.TemporaryFile(mode='w+b')
                     fileobj.write(json.dumps(param).encode())
                     fileobj.seek(0)
@@ -211,18 +217,9 @@ class Workflow(WorkflowBase):
                 elif any(param.startswith(prefix) for prefix in ('https://', 'http://')):
                     submission_json[key] = HTTPObject(param).download_to_bytes_readable()
                 else:
-                    submission_json[key] = open(param, 'rb')  # todo filecheck this (?)
+                    submission_json[key] = open(param, 'rb')
 
         return submission_json
-
-    # todo implement me, integrate with _create_submission_json
-    def _package_workflow_dependencies(self, *dependencies):
-        """Download wdls, zip, and return a bytes-readable output"""
-        for dependency in dependencies:
-            # download file into memory
-            # put them all into a zip file
-            # return that zip file
-            pass
 
     def abort(self, *args, **kwargs):
         """Abort this workflow.

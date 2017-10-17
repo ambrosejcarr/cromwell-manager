@@ -1,4 +1,6 @@
 from io import BytesIO, BufferedIOBase
+from tempfile import NamedTemporaryFile
+import zipfile
 from google.cloud import storage
 import requests
 
@@ -109,3 +111,29 @@ class HTTPObject:
         buffer = BytesIO(bytestring)
         buffer.seek(0)
         return buffer
+
+
+def package_workflow_dependencies(**dependencies):
+    """Download wdls, zip, and return a bytes-readable output
+
+    :param dependencies: dict of dependency (name, path) pairs to be included in the archive
+      - name should be the expected name for the imported dependency
+      - path should give the object's location, supports google storage, https, and local paths
+    :return File: file object with binary data written.
+    """
+    archive_buffer = NamedTemporaryFile(delete=False)
+    archive = zipfile.ZipFile(archive_buffer, 'a')
+
+    for name, dependency in dependencies.items():
+        if dependency.startswith('gs://'):
+            dependency_data = GSObject(dependency).download_as_string()
+            archive.writestr(name, dependency_data)
+        if dependency.startswith('https://') or dependency.startswith('http://'):
+            dependency_data = HTTPObject(dependency).download_as_string()
+            archive.writestr(name, dependency_data)
+        else:  # assume filepath
+            archive.write(dependency, arcname=name)
+
+    archive.close()  # writes essential records
+    archive_buffer.close()  # clean up, will be deleted on program termination
+    return open(archive_buffer.name, 'rb')
