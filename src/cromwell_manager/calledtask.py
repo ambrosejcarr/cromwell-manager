@@ -19,6 +19,9 @@ class Shard:
             task_name=self._data['labels']['wdl-task-name'],
             open_log_file_object=fileobj)
 
+    def __repr__(self):
+        return '<Google Compute Shard: %s>' % self._data['labels']['wdl-task-name']
+
     def __getitem__(self, item):
         return self._data[item]
 
@@ -47,6 +50,9 @@ class CalledTask:
         self._name = name
         self._storage_client = client
         self._shards = [Shard(s, client) for s in shard_metadata]
+
+    def __repr__(self):
+        return "<CalledTask: %s, %d shard(s)>" % (self._name, len(self._shards))
 
     @property
     def is_singleton(self):

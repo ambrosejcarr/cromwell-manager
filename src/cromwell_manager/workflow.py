@@ -22,6 +22,9 @@ class WorkflowBase:
         # filled by querying server
         self._tasks = {}
 
+    def __repr__(self):
+        raise NotImplementedError
+
     @property
     def storage_client(self):
         """Authenticated google storage client."""
@@ -120,7 +123,7 @@ class WorkflowBase:
         """
         if isinstance(filename, str):
             filename = open(filename, 'w')
-        for task in self.tasks(retrieve=retrieve).values():
+        for task in self.tasks.values():
             if isinstance(task, CalledTask):
                 filename.write(str(task.resource_utilization))
             elif isinstance(task, SubWorkflow):
@@ -130,12 +133,15 @@ class WorkflowBase:
                                 % type(task))
 
 
+# todo workflow fails to start, make the error messages clearer! right now you get a KeyError
+# when Cromwell attempts to access Workflow ID (error should be thrown earlier)
+# todo not sure storage client should be required
 class Workflow(WorkflowBase):
     """Object to define an instance of a top-level workflow run on Cromwell."""
 
-    # todo workflow fails to start, make the error messages clearer! right now you get a KeyError
-    # when Cromwell attempts to access Workflow ID (error should be thrown earlier)
-    # todo not sure storage client should be required
+    def __repr__(self):
+        return '<Workflow: %s>' % self.id
+
     @classmethod
     def from_submission(
             cls, wdl, inputs_json, cromwell_server, storage_client, options_json=None,
@@ -265,4 +271,6 @@ class Workflow(WorkflowBase):
 
 class SubWorkflow(WorkflowBase):
     """A workflow without custom constructors"""
-    pass
+
+    def __repr__(self):
+        return '<SubWorkflow: %s>' % self.id

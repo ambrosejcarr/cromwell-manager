@@ -49,6 +49,9 @@ class Cromwell:
             raise RuntimeError('url, username, and password did not authenticate to a running '
                                'cromwell instance.')
 
+    def __repr__(self):
+        return '<Cromwell Server: ip: %s>' % self.cromwell_url
+
     @property
     def cromwell_url(self):
         """URL for the cromwell REST endpoints."""
