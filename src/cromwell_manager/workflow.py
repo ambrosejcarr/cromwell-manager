@@ -205,15 +205,17 @@ class Workflow(WorkflowBase):
         }
 
         # workflow dependencies
-        if isinstance(workflow_dependencies, str) and workflow_dependencies.endswith('.zip'):
+        if workflow_dependencies is None:
+            pass  # nothing to do
+        elif isinstance(workflow_dependencies, str) and workflow_dependencies.endswith('.zip'):
             check_parameters['wdlDependencies'] = workflow_dependencies  # delay check to below
         elif isinstance(workflow_dependencies, dict):
             submission_json['wdlDependencies'] = package_workflow_dependencies(
                 **workflow_dependencies)
         else:
-            raise TypeError('workflow_dependencies must be a dict containing (name, value) pairs, '
-                            'or a path to a pre-zipped dependency archive, not %s' %
-                            workflow_dependencies)
+            raise TypeError('if provided, workflow_dependencies must be a dict containing '
+                            '(name, value) pairs, or a path to a pre-zipped dependency archive, '
+                            'not %s' % workflow_dependencies)
 
         for key, param in check_parameters.items():
             if param is not None:
