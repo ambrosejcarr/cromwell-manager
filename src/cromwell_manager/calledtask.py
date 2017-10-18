@@ -63,6 +63,10 @@ class CalledTask:
         return not self.is_singleton
 
     @property
+    def name(self):
+        return self._name
+
+    @property
     def resource_utilization(self):
         if self.is_singleton:
             return self._shards[0].resource_utilization
