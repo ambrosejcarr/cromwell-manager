@@ -2,6 +2,7 @@ from io import BytesIO, BufferedIOBase
 from tempfile import NamedTemporaryFile
 import zipfile
 from google.cloud import storage
+import webbrowser
 import requests
 
 
@@ -137,3 +138,21 @@ def package_workflow_dependencies(**dependencies):
     archive.close()  # writes essential records
     archive_buffer.close()  # clean up, will be deleted on program termination
     return open(archive_buffer.name, 'rb')
+
+
+def open_gs_console(link, project):
+    """open the google storage console to view the contents of link
+
+    :param str link: gs file or directory
+    :param str project: project owner of link
+    """
+    if link.startswith('gs://'):
+        link = link.replace('gs://', '')
+        link = 'https://storage.cloud.google.com/{link}'.format(link=link)
+    if link.endswith('/'):
+        link += '?project={project}'.format(project=project)
+        link = 'https://console.cloud.google.com/storage/browser/{link}'.format(link=link)
+
+    webbrowser.open(link)
+
+
