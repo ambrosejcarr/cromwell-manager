@@ -83,21 +83,25 @@ class WorkflowBase:
         """Open timing for this task in browser window."""
         self.cromwell_server.timing(self.id)
 
-    def tasks(self, retrieve=True):
-        """Get the workflow task summaries.
+    def refresh_tasks(self):
+        """update tasks in self.tasks"""
+        for name, shard_list in self.metadata['calls'].items():
+            if 'subWorkflowId' in shard_list[0]:  # is a list of subworkflows
+                self._tasks[name] = [
+                    SubWorkflow(m['subWorkflowId'], self.cromwell_server, self.storage_client) for m
+                    in shard_list]
+            else:
+                self._tasks[name] = CalledTask(name, shard_list, self.storage_client)
 
-        :param bool retrieve: if True, get the current status from Cromwell, otherwise retrieve
-          stored status (default True)
+    @property
+    def tasks(self):
+        """Get the workflow task summaries.
 
         :return dict: Cromwell metadata for workflow
         """
-        if retrieve:
-            self._tasks = {}
-            for name, shard_list in self.metadata['calls'].items():
-                if 'subworkflowId' in shard_list[0]:  # is a list of subworkflows
-                    self._tasks[name] = [SubWorkflow(m['subworkflowId'], self.cromwell_server, self.storage_client) for m in shard_list]
-                else:
-                    self._tasks[name] = CalledTask(name, shard_list, self.storage_client)
+        if not self._tasks:
+            self.refresh_tasks()
+        return self._tasks
 
     def save_resource_utilization(self, filename, retrieve=True):
         """Save resource utilizations for each task to file.
