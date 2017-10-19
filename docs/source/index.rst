@@ -31,12 +31,21 @@ Modules
 
 .. automodule:: cromwell_manager.workflow
 
+.. autoclass:: cromwell_manager.workflow.WorkflowBase
+   :members:
+
 .. autoclass:: cromwell_manager.workflow.Workflow
    :members:
 
-.. automodule:: cromwell_manager.task
+.. autoclass:: cromwell_manager.workflow.SubWorkflow
+   :members:
 
-.. autoclass:: cromwell_manager.task.Task
+.. automodule:: cromwell_manager.calledtask
+
+.. autoclass:: cromwell_manager.calledtask.CalledTask
+   :members:
+
+.. autoclass:: cromwell_manager.calledtask.Shard
    :members:
 
 .. automodule:: cromwell_manager.resource_utilization
@@ -52,3 +61,6 @@ Modules
 .. autoclass:: cromwell_manager.io_util.HTTPObject
    :members:
 
+.. autofunction:: cromwell_manager.io_util.open_gs_console
+
+.. autofunction:: cromwell_manager.io_util.package_workflow_dependencies
