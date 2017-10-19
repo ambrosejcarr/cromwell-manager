@@ -296,6 +296,7 @@ class Cromwell:
         url = self.url_prefix + '/{id}/logs'.format(id=workflow_id)
         return self.get(url, *args, **kwargs)
 
+    # todo adjust to use the includeKey and excludeKey parameters; will make things way faster!
     def metadata(self, workflow_id, *args, **kwargs):
         """Retrieve metadata for workflow_id.
 
