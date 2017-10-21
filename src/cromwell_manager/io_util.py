@@ -1,6 +1,9 @@
+import os
+import sys
 from io import BytesIO, BufferedIOBase
 from tempfile import NamedTemporaryFile
 import zipfile
+import datetime
 from google.cloud import storage
 import webbrowser
 import requests
@@ -113,6 +116,9 @@ class HTTPObject:
         buffer.seek(0)
         return buffer
 
+    def exists(self):
+        return True if requests.head(self.url).status_code == 200 else False
+
 
 def package_workflow_dependencies(**dependencies):
     """Download wdls, zip, and return a bytes-readable output
@@ -156,3 +162,29 @@ def open_gs_console(link, project):
     webbrowser.open(link)
 
 
+def check_exists(file_or_link):
+    """check that a file or link points to a valid location
+
+    :param str file_or_link:
+    :return bool:
+    """
+    if file_or_link.startswith('http'):
+        rc = requests.head(file_or_link).status_code
+        if rc == 200:
+            announce('checking {}... OK.'.format(file_or_link))
+        else:
+            announce('checking {}... returned code {!s}, FAIL.'.format(file_or_link, rc))
+    elif file_or_link.startswith('gs://'):
+        if GSObject(file_or_link).blob.exists():
+            announce('checking {}... OK.'.format(file_or_link))
+        else:
+            announce('checking {}... does not exist!, FAIL.'.format(file_or_link))
+    else:
+        if os.path.isfile(file_or_link):
+            announce('checking {}... OK.')
+        else:
+            announce('checking {}... not a valid file, FAIL.'.format(file_or_link))
+
+
+def announce(message):
+    print('CWM:{}:{}'.format(datetime.datetime.now(), message))

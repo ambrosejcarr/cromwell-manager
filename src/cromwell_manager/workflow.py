@@ -1,9 +1,16 @@
+import sys
+import os
+import re
 import json
 import tempfile
+import subprocess
+import datetime
+import requests
 from google.cloud import storage
 from .calledtask import CalledTask
 from .cromwell import Cromwell
-from .io_util import GSObject, HTTPObject, package_workflow_dependencies
+from .io_util import (
+    GSObject, HTTPObject, package_workflow_dependencies, check_exists, announce)
 
 
 # todo generate links to google storage for inputs / outputs / files etc
@@ -213,9 +220,10 @@ class Workflow(WorkflowBase):
             submission_json['wdlDependencies'] = package_workflow_dependencies(
                 **workflow_dependencies)
         else:
-            raise TypeError('if provided, workflow_dependencies must be a dict containing '
-                            '(name, value) pairs, or a path to a pre-zipped dependency archive, '
-                            'not %s' % workflow_dependencies)
+            raise TypeError(
+                'if provided, workflow_dependencies must be a dict containing '
+                '(name, value) pairs, or a path to a pre-zipped dependency archive, '
+                'not %s' % workflow_dependencies)
 
         for key, param in check_parameters.items():
             if param is not None:
@@ -269,6 +277,87 @@ class Workflow(WorkflowBase):
     #                 if shard['executionStatus'] == 'Running':
     #                     running.append(name)
     #         return self.metadata['calls'][-1]['name']
+
+    # todo untested; right now it's just validating every argument; needs to only do
+    # files
+    @classmethod
+    def validate(
+            cls, wdl, inputs_json,  storage_client, cromwell_server=None,
+            options_json=None, workflow_dependencies=None, custom_labels=None, *args,
+            **kwargs):
+        """Validate a workflow, catching errors before submission.
+
+
+        :param str wdl: wdl that defines this workflow
+        :param str inputs_json: inputs to this wdl
+        :param Cromwell cromwell_server: an authenticated cromwell server
+        :param storage.Client storage_client: authenticated google storage client
+
+        :param str | dict workflow_dependencies:
+        :param dict custom_labels:
+        :param str options_json: options file for the workflow
+
+        :param bool wait: if True, wait until workflow recognizes as submitted (default: True)
+        :param int timeout: maximum time to wait
+        :param int delay: time between status queries
+        :param bool verbose: if True, print request results
+        :param args: additional positional args to pass to requests.post
+        :param kwargs: additional keyword args to pass to request.post
+
+        :return dict: Cromwell submission result
+        """
+
+        file_dictionary = cls._create_submission_json(
+            wdl=wdl, inputs_json=inputs_json, options_json=options_json,
+            workflow_dependencies=workflow_dependencies, custom_labels=custom_labels,
+            gs_client=storage_client)
+
+        # create a temporary directory to organize the submission
+        print('CWM:{}:creating temporary directory'.format(datetime.datetime.now()))
+        with tempfile.TemporaryDirectory() as tmpdir:
+
+            # dump the dependencies into the directory
+            zipfile_data = file_dictionary['wdlDependencies'].read()
+            print('CWM:{}:writing dependencies'.format(datetime.datetime.now()))
+            with open(tmpdir + '/dependencies.zip', 'wb') as f:
+                f.write(zipfile_data)
+            subprocess.call(['unzip', '-o', '{}/dependencies.zip'.format(tmpdir)])
+
+            # write the wdl to the directory
+            print('CWM:{}:writing wdl'.format(datetime.datetime.now()))
+            wdl_data = file_dictionary['wdlSource'].read()
+            with open('source.wdl', 'wb') as f:
+                f.write(wdl_data)
+
+            # run validate
+            print('CWM:{}:running wdltool validate'.format(datetime.datetime.now()))
+            cmd = 'java -jar {wdltool} validate {tmpdir}/source.wdl'.format(
+                tmpdir=tmpdir, wdltool=os.environ['wdltool']
+            )
+            p = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=sys.stderr)
+            err = p.communicate()
+            print(err)
+
+            # checking input file links
+            print('CWM:{}:checking input file links'.format(datetime.datetime.now()))
+            input_data = json.load(file_dictionary['workflowInputs'])
+            for f in input_data:
+                check_exists(f)
+
+            # get a list of all the docker files, including those in subworkflows
+            pattern = re.compile('runtime\s*?\{.*?docker:\s*?"(.*?)".*?\}')
+            for image in re.findall(pattern, wdl_data):
+                if ':' in image:
+                    name, tag = image.split(':')
+                else:
+                    name, tag = image, 'latest'
+                rc = requests.head('https://index.docker.io/v1/repositories/{name}/'
+                                   'tags/{tag}'.format(name=name, tag=tag)).status_code
+                if rc == 200:
+                    announce('checking docker image {}... OK.'.format(image))
+                else:
+                    announce('checking docker image {}... not found. Is image private?'
+                             ''.format(image))
 
 
 class SubWorkflow(WorkflowBase):

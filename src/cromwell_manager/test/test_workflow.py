@@ -1,5 +1,6 @@
+import re
 import unittest
-import cromwell_tools as cwt
+import cromwell_manager as cwm
 import subprocess
 import os
 
@@ -19,30 +20,30 @@ class TestWorkflow(unittest.TestCase):
         cls.wdl = module_dir + '/data/testing.wdl'
         cls.inputs = module_dir + '/data/testing_example_inputs.json'
         cls.options = module_dir + '/data/options.json'
-        cls.server = cwt.Cromwell(ip_address)
+        # cls.server = cwm.Cromwell(ip_address)
 
     def test_status(self):
         # test that old workflow obtains succeeded state
-        workflow = cwt.Workflow(successful_run_id, self.server)
+        workflow = cwm.Workflow(successful_run_id, self.server)
         status = workflow.status
         self.assertEqual(status['status'], 'Succeeded')
 
     def test_submit(self):
         # start a new run, verify it is submitted successfully
-        workflow = cwt.Workflow.from_submission(
+        workflow = cwm.Workflow.from_submission(
             self.wdl, self.inputs, options_json=self.options, cromwell_server=self.server)
         self.assertIn(workflow.status['status'], {'Submitted', 'Running'})
 
     def test_metadata(self):
         # test that old workflow obtains succeeded state
-        workflow = cwt.Workflow(successful_run_id, self.server)
+        workflow = cwm.Workflow(successful_run_id, self.server)
         metadata = workflow.metadata
         self.assertEqual(metadata['status'], 'Succeeded')
         # self.assertEqual(metadata['workflowName'], 'Sleep')
 
     @unittest.skip('long-running test (~1m)')
     def test_small_workflow_monitoring(self):
-        workflow = cwt.Workflow.from_submission(
+        workflow = cwm.Workflow.from_submission(
             self.wdl, self.inputs, options_json=self.options, cromwell_server=self.server)
         workflow.save_resource_utilization(retrieve=True, filename='test_utilization.txt')
 
@@ -68,10 +69,17 @@ class TestWorkflow(unittest.TestCase):
             subprocess.check_output(dl_10x_count_inputs_args)
 
         # run the workflow, monitor.
-        workflow = cwt.Workflow.from_submission(
+        workflow = cwm.Workflow.from_submission(
             count_wdl_name, count_inputs_name, options_json=self.options,
             cromwell_server=self.server)
         workflow.save_resource_utilization(retrieve=True, filename='test_utilization.txt')
+    
+    def test_regex(self):
+        pattern = re.compile('runtime\s*?\{.*?docker:\s*?"(.*?)".*?\}', flags=re.DOTALL)
+
+
+
+
 
 if __name__ == "__main__":
     unittest.main()
