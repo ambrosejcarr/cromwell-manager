@@ -3,7 +3,7 @@ import os
 import re
 import json
 import tempfile
-import subprocess
+from subprocess import Popen, PIPE, call
 import datetime
 import requests
 from google.cloud import storage
@@ -282,29 +282,24 @@ class Workflow(WorkflowBase):
     # files
     @classmethod
     def validate(
-            cls, wdl, inputs_json,  storage_client, cromwell_server=None,
-            options_json=None, workflow_dependencies=None, custom_labels=None, *args,
-            **kwargs):
+            cls, wdl, inputs_json,  storage_client, options_json=None,
+            workflow_dependencies=None, custom_labels=None, *args, **kwargs):
         """Validate a workflow, catching errors before submission.
 
+        if using positional arguments, the same argument set that is used for submission
+        can be used to call `validate`.
 
         :param str wdl: wdl that defines this workflow
         :param str inputs_json: inputs to this wdl
-        :param Cromwell cromwell_server: an authenticated cromwell server
+
         :param storage.Client storage_client: authenticated google storage client
 
         :param str | dict workflow_dependencies:
         :param dict custom_labels:
         :param str options_json: options file for the workflow
 
-        :param bool wait: if True, wait until workflow recognizes as submitted (default: True)
-        :param int timeout: maximum time to wait
-        :param int delay: time between status queries
-        :param bool verbose: if True, print request results
-        :param args: additional positional args to pass to requests.post
-        :param kwargs: additional keyword args to pass to request.post
-
-        :return dict: Cromwell submission result
+        :param args: argument sink for arguments to `from_submission` that are not used.
+        :param kwargs: argument sink for arguments to `from_submission` that are not used.
         """
 
         file_dictionary = cls._create_submission_json(
@@ -313,51 +308,101 @@ class Workflow(WorkflowBase):
             gs_client=storage_client)
 
         # create a temporary directory to organize the submission
-        print('CWM:{}:creating temporary directory'.format(datetime.datetime.now()))
+        announce('creating temporary directory')
         with tempfile.TemporaryDirectory() as tmpdir:
 
-            # dump the dependencies into the directory
-            zipfile_data = file_dictionary['wdlDependencies'].read()
-            print('CWM:{}:writing dependencies'.format(datetime.datetime.now()))
-            with open(tmpdir + '/dependencies.zip', 'wb') as f:
-                f.write(zipfile_data)
-            subprocess.call(['unzip', '-o', '{}/dependencies.zip'.format(tmpdir)])
+            # change directory for validate
+            old_wd = os.getcwd()
+            os.chdir(tmpdir)
+
+            if 'wdlDependencies' in file_dictionary:
+                # dump the dependencies into the directory
+                zipfile_data = file_dictionary['wdlDependencies'].read()
+                announce('writing dependencies')
+                with open(tmpdir + '/dependencies.zip', 'wb') as f:
+                    f.write(zipfile_data)
+                call(['unzip', '-o', '%s/dependencies.zip' % tmpdir, '-d', tmpdir])
 
             # write the wdl to the directory
-            print('CWM:{}:writing wdl'.format(datetime.datetime.now()))
+            announce('writing wdl')
             wdl_data = file_dictionary['wdlSource'].read()
-            with open('source.wdl', 'wb') as f:
+            with open(tmpdir + '/source.wdl', 'wb') as f:
                 f.write(wdl_data)
 
             # run validate
-            print('CWM:{}:running wdltool validate'.format(datetime.datetime.now()))
-            cmd = 'java -jar {wdltool} validate {tmpdir}/source.wdl'.format(
-                tmpdir=tmpdir, wdltool=os.environ['wdltool']
-            )
-            p = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=sys.stderr)
-            err = p.communicate()
-            print(err)
+            announce('running wdltool validate')
+            try:
+                cmd = 'java -jar {wdltool} validate {tmpdir}/source.wdl'.format(
+                    tmpdir=tmpdir, wdltool=os.environ['wdltool']
+                )
+                p = Popen(cmd, stderr=PIPE, stdout=PIPE, shell=True)
+                out, err = p.communicate()
+                if err.strip():
+                    print(err.decode())
+                if out.strip():
+                    print(out.decode())
+                if not any((err.strip(), out.strip())):
+                    announce('validation successful')
 
-            # checking input file links
-            print('CWM:{}:checking input file links'.format(datetime.datetime.now()))
-            input_data = json.load(file_dictionary['workflowInputs'])
-            for f in input_data:
-                check_exists(f)
+            except EnvironmentError:
+                announce('wdltool.jar must be set as the environment var `wdltool` to '
+                         'run validate')
 
-            # get a list of all the docker files, including those in subworkflows
-            pattern = re.compile('runtime\s*?\{.*?docker:\s*?"(.*?)".*?\}')
-            for image in re.findall(pattern, wdl_data):
+            # # todo this doesn't work yet; need to select only File objects to check
+            # # there is also complexity over Array[File] syntax; (how to check the json?)
+            # print('CWM:{}:checking input file links'.format(datetime.datetime.now()))
+            # input_data = json.load(file_dictionary['workflowInputs'])
+            # for f in input_data:
+            #     check_exists(f)
+
+            # check that the docker images are available, else print a warning
+            pattern = re.compile('runtime\s*?\{.*?docker:\s*?"(.*?)".*?\}', re.DOTALL)
+            wdls = set(f for f in os.listdir(tmpdir) if f.endswith('.wdl'))
+            dockers = []
+            for wdl in wdls:
+                with open('{}/{}'.format(tmpdir, wdl), 'r') as f:
+                    data = f.read()
+                    dockers.extend(re.findall(pattern, data))
+
+            for image in set(dockers):
                 if ':' in image:
                     name, tag = image.split(':')
                 else:
                     name, tag = image, 'latest'
-                rc = requests.head('https://index.docker.io/v1/repositories/{name}/'
-                                   'tags/{tag}'.format(name=name, tag=tag)).status_code
-                if rc == 200:
+
+                # authenticate with docker and check if image exists
+                auth_url = 'https://auth.docker.io/token'
+                auth_service = 'registry.docker.io'
+                reg_url = 'https://registry.hub.docker.com'
+
+                tag_url = {
+                    'reg_url': reg_url,
+                    'repo': name,
+                    'ref': tag,
+                }
+                querystring = {
+                    'service': auth_service,
+                    'scope': 'repository:%s:pull' % name,
+                }
+
+                auth_response = requests.request('GET', auth_url, params=querystring)
+                auth_data = auth_response.json()
+
+                reg_headers = {
+                    'accept': "application/vnd.docker.distribution.manifest.v2+json",
+                    'Authorization': 'Bearer %s' % auth_data['access_token']
+                }
+                get_manifests_v2 = "{reg_url}/v2/{repo}/manifests/{ref}".format(**tag_url)
+                reg_response = requests.head(get_manifests_v2, headers=reg_headers)
+
+                if reg_response.status_code == 200:
                     announce('checking docker image {}... OK.'.format(image))
                 else:
                     announce('checking docker image {}... not found. Is image private?'
                              ''.format(image))
+
+            # reset path
+            os.chdir(old_wd)
 
 
 class SubWorkflow(WorkflowBase):
