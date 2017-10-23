@@ -14,10 +14,13 @@ class Shard:
         self._data = metadata
 
         gs_log = GSObject(self._data['monitoringLog'], client)
-        fileobj = gs_log.download_to_bytes_readable()
-        self._resource_utilization = ResourceUtilization.from_file(
-            task_name=self._data['labels']['wdl-task-name'],
-            open_log_file_object=fileobj)
+        try:
+            fileobj = gs_log.download_to_bytes_readable()
+            self._resource_utilization = ResourceUtilization.from_file(
+                task_name=self._data['labels']['wdl-task-name'],
+                open_log_file_object=fileobj)
+        except AttributeError:  # monitoringLog does not exist for this task
+            self._resource_utilization = None
 
     def __repr__(self):
         return '<Google Compute Shard: %s>' % self._data['labels']['wdl-task-name']
