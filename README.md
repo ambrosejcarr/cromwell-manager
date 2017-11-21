@@ -7,7 +7,7 @@ Complete documentation including installation instructions available at
 ## Quickstart:
 
 ```
-git clone https://github.com/ambrosejcarr/cromwell_manager
+git clone https://github.com/ambrosejcarr/cromwell-manager.git
 cd cromwell_manager
 python3 setup.py install
 ```
